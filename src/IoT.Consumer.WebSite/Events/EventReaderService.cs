@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-
-namespace IoT.Consumer.WebSite.Events
+﻿namespace IoT.Consumer.WebSite.Events
 {
     public class EventReaderService : IEventReaderService, IAsyncDisposable
     {

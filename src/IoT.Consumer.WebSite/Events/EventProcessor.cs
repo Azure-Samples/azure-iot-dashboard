@@ -1,14 +1,9 @@
-﻿using Azure.Storage.Blobs;
-using Azure.Messaging.EventHubs;
+﻿using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
-using Azure.Storage;
-using System.Runtime.CompilerServices;
 using Azure.Messaging.EventHubs.Processor;
-using System.Diagnostics;
+using Azure.Storage.Blobs;
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System;
-using Azure.Messaging.EventHubs.Primitives;
+using System.Diagnostics;
 using System.Net.Sockets;
 
 namespace IoT.Consumer.WebSite.Events

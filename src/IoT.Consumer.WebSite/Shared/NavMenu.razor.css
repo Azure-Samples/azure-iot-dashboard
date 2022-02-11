@@ -1,10 +1,12 @@
 .navbar-toggler {
-    background-color: rgba(255, 255, 255, 0.1);
+    /*background-color: rgba(255, 255, 255, 0.1);*/
+    /*background-color: #00ff00;*/
 }
 
 .top-row {
     height: 3.5rem;
-    background-color: rgba(0,0,0,0.4);
+    /*background-color: rgba(0,0,0,0.4);*/
+    /*background-color: #1a1e34;*/
 }
 
 .navbar-brand {
