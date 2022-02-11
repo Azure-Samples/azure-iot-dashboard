@@ -1,32 +1,36 @@
-# Project Name
+# IoT Dashboard
 
-(short, 1-3 sentenced, description of the project)
+End-to.end sample to showcase usage of Azure IoT SDK for .NET, best practices for resilency, telemetry consumption, device interaction using PnP capabilities and Digital Twin, etc.
 
 ## Features
 
-This project framework provides the following features:
+Starting:
 
-* Feature 1
-* Feature 2
+* Telemetry consumption
+* Message routing capabilities
+* Manage Identities? 
+* Failover resilency
+* Device Registry Interaction?
+* Realtime-device Discovery?
+* Device Twin Interaction (based on PnP capabilities)
 * ...
 
 ## Getting Started
 
+Now using dotnet user secrets to store connection strings:
+
+``` cmd
+dotnet user-secret init
+dotnet user-secret set "Iot:IotHub" "<YOUR IOT HUB CONNECTION STRING>"
+dotnet user-secret set "Iot:StorageAccount" "<YOUR IOT HUB CONNECTION STRING>"
+```
+
 ### Prerequisites
-
-(ideally very short, if any)
-
-- OS
-- Library version
-- ...
-
-### Installation
-
-(ideally very short)
-
-- npm install [package name]
-- mvn install
-- ...
+* Iot Hub
+* Message Routes to Built-in endpoint for:
+![image](https://user-images.githubusercontent.com/2638875/153589025-2acae73e-bfc5-49d8-bd9b-0599ba7dc7fa.png)
+* Consumer group `webapp`
+* Any device sending telemetry to IoT Hub, preferable if it is PnP and use Digital Twin
 
 ### Quickstart
 (Add steps to get up and running quickly)
