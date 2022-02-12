@@ -1,3 +1,5 @@
+## <img src="Assets/images/azureiottelemetry.png" alt="IoT Dashboard" style="float: left; margin-right:10px;" />
+
 # IoT Dashboard
 
 End-to-end sample to showcase usage of Azure IoT SDK for .NET, best practices for telemetry consumption, resilency, device interaction using PnP capabilities and Digital Twin, etc.
