@@ -16,7 +16,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "KeyVaultUri": "https://YOURKEYVAULTNAME.vault.azure.net/",
-        "AZURE_USERNAME": "anpadill@microsoft.com"
+        "AZURE_USERNAME": "yourname@yourdomain.com"
       }
     },
     "IIS Express": {
