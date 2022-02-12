@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "identityapp1": {
+      "type": "identityapp.aad"
+    },
+    "secrets2": {
+      "secretStore": null,
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.KeyVault/vaults/YOURKEYVAULTNAME",
+      "type": "secrets.keyVault",
+      "connectionId": "KeyVaultUri"
+    },
+    "appInsights1": {
+      "secretStore": "LocalSecretsFile",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/microsoft.insights/components/YOURAPPINSIGHTSNAME",
+      "type": "appInsights.azure",
+      "connectionId": "APPINSIGHTS_CONNECTIONSTRING"
+    }
+  }
+}

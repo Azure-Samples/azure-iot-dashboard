@@ -14,14 +14,18 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7000;http://localhost:5000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "KeyVaultUri": "https://YOURKEYVAULTNAME.vault.azure.net/",
+        "AZURE_USERNAME": "anpadill@microsoft.com"
       }
     },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "KeyVaultUri": "https://YOURKEYVAULTNAME.vault.azure.net/",
+        "AZURE_USERNAME": "yourname@yourdomain.com"
       }
     }
   }

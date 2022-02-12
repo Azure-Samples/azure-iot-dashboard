@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "secrets2": {
+      "type": "secrets",
+      "connectionId": "KeyVaultUri"
+    },
+    "identityapp1": {
+      "type": "identityapp"
+    },
+    "appInsights1": {
+      "type": "appInsights",
+      "connectionId": "APPINSIGHTS_CONNECTIONSTRING"
+    "storage1": {
+      "type": "storage",
+      "connectionId": "Iot:StorageAccount"
+    }
+  }
+}
