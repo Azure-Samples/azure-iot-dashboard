@@ -1,4 +1,5 @@
 using IoT.Consumer.WebSite.Data;
+using IoT.Consumer.WebSite.Devices;
 using IoT.Consumer.WebSite.Events;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -12,6 +13,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddSingleton<IEventReaderService, EventReaderService>();
+builder.Services.AddSingleton<IDeviceService, DeviceService>();
 
 var app = builder.Build();
 

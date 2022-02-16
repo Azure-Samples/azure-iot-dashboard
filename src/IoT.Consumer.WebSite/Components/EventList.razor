@@ -17,10 +17,9 @@
                 <th scope="col">Source</th>
                 <th scope="col">Operation</th>
                 <th scope="col">DeviceId</th>
-                <th scope="col">Schema</th>
+                <th scope="col">Dt. Schema</th>
+                <th scope="col">Dt. Component</th>
                 <th scope="col">Body</th>
-                <th scope="col">Sequence</th>
-                <th scope="col">Offset</th>
             </tr>
 
             @foreach (var item in _events)
@@ -31,9 +30,8 @@
                     <td>@item.Operation</td>
                     <td>@item.DeviceId</td>
                     <td>@item.DataSchema</td>
+                    <td>@item.Component</td>
                     <td><pre><code>@item.Body</code></pre></td>
-                    <td>@item.SequenceNumber</td>
-                    <td>@item.Offset</td>
                 </tr>
             }
 
@@ -63,7 +61,6 @@
                 <th scope="col">Description</th>
                 <th scope="col">Exception Details</th>
             </tr>
-
             @foreach (var item in _processorInfo)
             {
                 <tr>
@@ -73,7 +70,6 @@
                     <td><pre><code>@item.Exception?.ToString()</code></pre></td>
                 </tr>
             }
-
         </table>
         </div>
     }
@@ -86,20 +82,32 @@
 }
 
 @code {
+    [Parameter]
+    public string? DeviceId { get; set; }
+
     private ObservableList<Event>? _events;
     private ObservableList<EventProcessorInfo>? _processorInfo;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        InitializeEventList(null);
+        await base.OnInitializedAsync();
+        InitializeEventList();
     }
 
-    private void InitializeEventList(string? deviceId)
+    private void InitializeEventList()
     {
         if (SynchronizationContext.Current != null)
         {
-            _events = new ObservableList<Event>(EventService.Events.ObserveOn(SynchronizationContext.Current), StateHasChanged);
-            _processorInfo = new ObservableList<EventProcessorInfo>(EventService.ProcessorInfo.ObserveOn(SynchronizationContext.Current), StateHasChanged);
+            if (DeviceId is null)
+            {
+                _events = new ObservableList<Event>(EventService.Events.ObserveOn(SynchronizationContext.Current), StateHasChanged);
+                _processorInfo = new ObservableList<EventProcessorInfo>(EventService.ProcessorInfo.ObserveOn(SynchronizationContext.Current), StateHasChanged);
+            }
+            else
+            {
+                _events = new ObservableList<Event>(EventService.Events.Where(e => e.DeviceId == DeviceId).ObserveOn(SynchronizationContext.Current), StateHasChanged);
+                _processorInfo = null;
+            }
         }
     }
 
