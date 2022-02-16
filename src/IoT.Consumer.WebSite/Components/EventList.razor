@@ -3,83 +3,89 @@
 @inject IEventReaderService EventService
 @implements IDisposable
 
+
 @if (_events is not null)
 {
-    if (_events.Count > 0)
-    {
-        <div class="card-body">
+    <div class="list-stream-container" style="height: 630px">
+        <h5>Device Events</h5>
+        @if (_events.Count > 0)
+        {
             <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear</a>
-        </div>
-        <div>
-        <table class="table">
-            <tr>
-                <th scope="col">Enqueued Time</th>
-                <th scope="col">Source</th>
-                <th scope="col">Operation</th>
-                <th scope="col">DeviceId</th>
-                <th scope="col">Dt. Schema</th>
-                <th scope="col">Dt. Component</th>
-                <th scope="col">Body</th>
-            </tr>
-
-            @foreach (var item in _events)
-            {
+            <table class="table">
                 <tr>
-                    <td>@item.EnqueuedTime</td>
-                    <td>@item.MessageSource</td>
-                    <td>@item.Operation</td>
-                    <td>@item.DeviceId</td>
-                    <td>@item.DataSchema</td>
-                    <td>@item.Component</td>
-                    <td><pre><code>@item.Body</code></pre></td>
+                    <th scope="col">Enqueued Time</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Operation</th>
+                    <th scope="col">DeviceId</th>
+                    <th scope="col">Dt. Schema</th>
+                    <th scope="col">Dt. Component</th>
+                    <th scope="col">Body</th>
                 </tr>
-            }
+                @foreach (var item in _events)
+                {
+                    <tr style="vertical-align:top">
+                        <td>@item.EnqueuedTime</td>
+                        <td>@item.MessageSource</td>
+                        <td>@item.Operation</td>
+                        <td>@item.DeviceId</td>
+                        <td>@item.DataSchema</td>
+                        <td>@item.Component</td>
+                        <td><pre>@item.Body</pre></td>
+                    </tr>
+                }
+            </table>
 
-        </table>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-primary" role="alert">
-            No events have been sent.
-        </div>
-    }
+        }
+        else
+        {
+            <div class="alert alert-primary" role="alert">
+                Waiting for devices events...
+            </div>
+
+        }
+    </div>
 }
+
+
+<div style="height: 7px"></div>
 
 @if (_processorInfo is not null)
 {
-    if (_processorInfo.Count > 0)
-    {
-            <div class="card-body">
-                <a href="javascript:void(0);" class="card-link" @onclick="() => _processorInfo?.Clear()">Clear</a>
-            </div>
-            <div>
-           <table class="table">
-            <tr>
-                <th scope="col">TimeStamp</th>
-                <th scope="col">Type</th>
-                <th scope="col">Description</th>
-                <th scope="col">Exception Details</th>
-            </tr>
-            @foreach (var item in _processorInfo)
-            {
+    <div class="list-stream-container">
+        <h5>Event Hub Processor Events</h5>
+        @if (_processorInfo.Count > 0)
+        {
+
+
+            <a href="javascript:void(0);" class="card-link" @onclick="() => _processorInfo?.Clear()">Clear</a>
+            <table class="table" style="max-height: 25%">
                 <tr>
-                    <td>@item.Timestamp</td>
-                    <td>@item.Type</td>
-                    <td>@item.Description</td>
-                    <td><pre><code>@item.Exception?.ToString()</code></pre></td>
+                    <th scope="col">TimeStamp</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Exception Details</th>
                 </tr>
-            }
-        </table>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-primary" role="alert">
-            No processor info have been received.
-        </div>
-    }
+                @foreach (var item in _processorInfo)
+                {
+                    <tr>
+                        <td>@item.Timestamp</td>
+                        <td>@item.Type</td>
+                        <td>@item.Description</td>
+                        <td><pre><code>@item.Exception?.ToString()</code></pre></td>
+                    </tr>
+                }
+            </table>
+
+        }
+        else
+        {
+            <div class="alert alert-primary" role="alert">
+                Waiting for processor events...
+            </div>
+        }
+    </div>
 }
+
 
 @code {
     [Parameter]

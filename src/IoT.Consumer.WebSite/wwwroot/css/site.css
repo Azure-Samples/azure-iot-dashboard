@@ -62,3 +62,9 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+.list-stream-container {
+    max-height: 900px; 
+    overflow-y: scroll; 
+    margin-bottom: 15px;
+}
