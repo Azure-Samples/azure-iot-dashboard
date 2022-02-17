@@ -1,9 +1,11 @@
 using Azure.Identity;
 using IoT.Consumer.WebSite.Data;
+using IoT.Consumer.WebSite.Devices;
 using IoT.Consumer.WebSite.Events;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
+using Microsoft.Extensions.Azure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +31,7 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
 builder.Services.AddSingleton<IEventReaderService, EventReaderService>();
+builder.Services.AddSingleton<IDeviceService, DeviceService>();
 
 var app = builder.Build();
 

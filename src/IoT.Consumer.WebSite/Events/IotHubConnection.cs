@@ -1,14 +1,15 @@
-﻿using Microsoft.Azure.Amqp;
-using Microsoft.Azure.Amqp.Framing;
-using Microsoft.Azure.Amqp.Sasl;
-using Microsoft.Azure.Amqp.Transport;
-using Microsoft.Azure.Devices.Client;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Azure.Amqp;
+using Microsoft.Azure.Amqp.Framing;
+using Microsoft.Azure.Amqp.Sasl;
+using Microsoft.Azure.Amqp.Transport;
+using Microsoft.Azure.Devices.Client;
 
 namespace IoT.Consumer.WebSite.Events
 {
