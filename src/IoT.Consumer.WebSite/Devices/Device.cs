@@ -10,5 +10,6 @@ namespace IoT.Consumer.WebSite.Devices
         public string? LastOperation { get; set; }
         public string? MessageSource { get; internal set; }
         public DateTimeOffset? LastOperationTimestamp { get; internal set; }
+        public bool? Disconnected { get; set; }
     }
 }

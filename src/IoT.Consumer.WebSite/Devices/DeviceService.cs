@@ -48,11 +48,13 @@ namespace IoT.Consumer.WebSite.Devices
                     Devices[idx].MessageSource = e.MessageSource;
                     Devices[idx].LastOperation = e.Operation;
                     Devices[idx].LastOperationTimestamp = e.EnqueuedTime;
+                    Devices[idx].Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected";
                 }
 
                 if (e.MessageSource == "Telemetry")
                 {                    
                     Devices[idx].LastTelemetryTimestamp = e.EnqueuedTime;
+                    Devices[idx].Disconnected = false;
                 }
             }
             else
@@ -64,7 +66,8 @@ namespace IoT.Consumer.WebSite.Devices
                     MessageSource = e.Operation is not null ? e.MessageSource : null,
                     LastOperation = e.Operation is not null ? e.Operation : null,
                     LastTelemetryTimestamp = e.MessageSource == "Telemetry" ? e.EnqueuedTime : null,
-                    LastOperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null
+                    LastOperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null,
+                    Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected"
                 };
                 Devices.Add(device);
             }

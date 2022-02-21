@@ -15,8 +15,8 @@
                     <th scope="col">Model Id</th>
                     <th scope="col">Last Operation</th>
                     <th scope="col">Op. Source</th>
-                    <th scope="col">Op. Timestamp</th>
                     <th scope="col">Last Telemetry</th>
+                    <th scope="col">Connected</th>
                 </tr>
 
                 @foreach (var item in DeviceService.Devices.OrderBy(d => d.DeviceId))
@@ -24,10 +24,10 @@
                     <tr>
                         <td><a href=/device/@item.DeviceId>@item.DeviceId</a></td>
                         <td>@item.ModelId</td>
-                        <td>@item.LastOperation</td>
-                        <td>@item.MessageSource</td>
-                        <td>@item.LastOperationTimestamp</td>
+                        <td>@(item.LastOperation is not null ? $"[{ item.LastOperationTimestamp }] { item.LastOperation }" : "-")</td>
+                        <td>@(item.LastOperation is not null ? item.MessageSource : "-")</td>
                         <td>@item.LastTelemetryTimestamp</td>
+                        <td>@(!item.Disconnected) @((item.Disconnected.HasValue && !item.Disconnected.Value) && (item.LastTelemetryTimestamp != null && (item.LastTelemetryTimestamp < DateTime.UtcNow.AddMinutes(-5))) ? "?" : "")</td>
                     </tr>
                 }
             </table>
