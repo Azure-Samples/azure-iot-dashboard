@@ -9,7 +9,7 @@
 @if (_events is not null)
 {
     <div class="list-stream-container" style="height: 630px">
-        <h5>Device Events</h5>
+        <h5>Device Events (web instance '@System.Environment.MachineName')</h5>
         @if (_events.Count > 0)
         {
             <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear</a>

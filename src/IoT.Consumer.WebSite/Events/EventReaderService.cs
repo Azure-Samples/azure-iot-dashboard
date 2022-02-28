@@ -17,7 +17,7 @@ namespace IoT.Consumer.WebSite.Events
         {
             _configuration = configuration;
 
-            //TODO: Managed Identity to retrieve the ConnectionString
+            //TODO: Managed Identity to retrieve the ConnectionString?? 
             var iotHubServiceConnString = _configuration.GetValue<String>("Iot:IotHub");
             var storageAccountConnString = _configuration.GetValue<String>("Iot:StorageAccount");
 
