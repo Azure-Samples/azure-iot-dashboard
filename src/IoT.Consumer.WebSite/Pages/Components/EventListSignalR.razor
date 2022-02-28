@@ -1,0 +1,185 @@
+﻿@using System.Reactive.Linq
+@using IoT.Consumer.WebSite.Events
+@using IoT.Consumer.WebSite.SignalR
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Microsoft.AspNetCore.WebUtilities;
+@inject NavigationManager navigationManager
+@inject IEventReaderService EventService
+
+@if (_events is not null)
+{
+    <div class="list-stream-container" style="height: 630px">
+        <h5>Device Events</h5>
+        @if (_events.Count > 0)
+        {
+            <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear</a>
+            <table class="table">
+                <tr>
+                    <th scope="col">Enqueued Time</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Operation</th>
+                    <th scope="col">DeviceId</th>
+                    <th scope="col">Dt. Schema</th>
+                    <th scope="col">Dt. Component</th>
+                    <th scope="col">Body</th>
+                </tr>
+                @foreach (var item in _events)
+                {
+                    <tr style="vertical-align:top">
+                        <td>@item.EnqueuedTime</td>
+                        <td>@item.MessageSource</td>
+                        <td>@item.Operation</td>
+                        <td>@item.DeviceId</td>
+                        <td>@item.DataSchema</td>
+                        <td>@item.Component</td>
+                        <td><pre>@item.Body</pre></td>
+                    </tr>
+                }
+            </table>
+
+        }
+        else if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div class="alert alert-primary" role="alert">
+                @_message
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-primary" role="alert">
+                Waiting for devices events...
+            </div>
+        }
+    </div>
+}
+
+<div style="height: 7px"></div>
+
+@*@if (_processorInfo is not null)
+{
+    <div class="list-stream-container">
+        <h5>Event Hub Processor Events</h5>
+        @if (_processorInfo.Count > 0)
+        {
+
+
+            <a href="javascript:void(0);" class="card-link" @onclick="() => _processorInfo?.Clear()">Clear</a>
+            <table class="table" style="max-height: 25%">
+                <tr>
+                    <th scope="col">TimeStamp</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Exception Details</th>
+                </tr>
+                @foreach (var item in _processorInfo)
+                {
+                    <tr>
+                        <td>@item.Timestamp</td>
+                        <td>@item.Type</td>
+                        <td>@item.Description</td>
+                        <td><pre><code>@item.Exception?.ToString()</code></pre></td>
+                    </tr>
+                }
+            </table>
+
+        }
+        else
+        {
+            <div class="alert alert-primary" role="alert">
+                Waiting for processor events...
+            </div>
+        }
+    </div>
+}*@
+
+
+@code {
+    // flag to indicate chat status
+    private bool _isConnected = false;
+    private bool _isSubscribed = false;
+
+    // on-screen (error) message
+    private string _message;
+
+    // device id filter (hardcoded for testing)
+    private string _deviceIdFilter; // = "memmon-ragc";
+
+    // list of messages events
+    private List<Event> _events = new List<Event>();
+
+    private string _hubUrl;
+    private HubConnection _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConnectToSignalrAsync();
+    }
+
+    public async Task ConnectToSignalrAsync()
+    {
+        var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("deviceId", out var deviceId))
+        {
+            _deviceIdFilter = deviceId;
+        }
+
+        try
+        {
+            // remove old messages if any
+            _events.Clear();
+
+            // Create the chat client
+            string baseUrl = navigationManager.BaseUri;
+
+            _hubUrl = baseUrl.TrimEnd('/') + IoTEventsHub.HubUrl;
+
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(_hubUrl)
+                .Build();
+
+            _hubConnection.On<Event>("DeviceTelemetry", ProcessTelemetryMessage);
+
+            await _hubConnection.StartAsync();
+
+            if (!string.IsNullOrWhiteSpace(_deviceIdFilter))
+                await _hubConnection.SendAsync("Subscribe", _deviceIdFilter);
+            else
+                await _hubConnection.SendAsync("Subscribe", "all-events");
+
+            _isConnected = true;
+            _isSubscribed = true;
+
+            //await SendAsync($"[Notice] {_username} joined chat room.");
+        }
+        catch (Exception e)
+        {
+            _message = $"ERROR: Failed to start telemetry subscription: {e.Message}";
+        }
+    }
+
+    private void ProcessTelemetryMessage(Event deviceEvent)
+    {
+        _events.Add(deviceEvent);
+
+        // Inform blazor the UI needs updating
+        StateHasChanged();
+    }
+
+    private async Task DisconnectAsync()
+    {
+        if (_isSubscribed)
+        {
+            await _hubConnection.SendAsync("Unsubscribe", _deviceIdFilter);
+            _isSubscribed = false;
+        }
+
+        if (_isConnected)
+        {
+            await _hubConnection.StopAsync();
+            await _hubConnection.DisposeAsync();
+
+            _hubConnection = null;
+            _isConnected = false;
+        }
+    }
+}

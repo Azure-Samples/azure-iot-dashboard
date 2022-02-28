@@ -1,14 +1,11 @@
-﻿using Azure.Storage.Blobs;
-using Azure.Messaging.EventHubs;
+﻿using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
-using Azure.Storage;
-using System.Runtime.CompilerServices;
 using Azure.Messaging.EventHubs.Processor;
-using System.Diagnostics;
+using Azure.Storage.Blobs;
+using IoT.Consumer.WebSite.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System;
-using Azure.Messaging.EventHubs.Primitives;
+using System.Diagnostics;
 using System.Net.Sockets;
 
 namespace IoT.Consumer.WebSite.Events
@@ -34,15 +31,19 @@ namespace IoT.Consumer.WebSite.Events
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
         private List<IObserver<Event>> _eventObservers = new List<IObserver<Event>>();
         private List<IObserver<EventProcessorInfo>> _processorInfoObservers = new List<IObserver<EventProcessorInfo>>();
+
+        private readonly IHubContext<IoTEventsHub> _signalR;
         
 
-        public EventProcessor(string iotHubConnectionString, 
+        public EventProcessor(
+            IHubContext<IoTEventsHub> signalr,
+            string iotHubConnectionString, 
             string checkpointStoreConnectionString, 
             CancellationTokenSource cancellationTokenSource,
             string consumerGroup = EventHubConsumerClient.DefaultConsumerGroupName, 
             string checkpointContainer = "iot-hub-consumer-web-checkpointing")
         {
-
+            _signalR = signalr;
             _iotHubConnectionString = iotHubConnectionString;
             _consumerGroup = consumerGroup;
 
@@ -111,11 +112,12 @@ namespace IoT.Consumer.WebSite.Events
                 if (args.HasEvent)
                 {
                     _lastEventReceivedTimeStamp = DateTime.UtcNow;
-                    Event newEvent = new Event(args.Data);
+                    Event iotEvent = new Event(args.Data);
                     
                     await Checkpoint(args);
-
-                    BroadcastEvent(newEvent);
+                    await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceTelemetry", iotEvent);
+                    await _signalR.Clients.Groups("all-events").SendAsync("DeviceTelemetry", iotEvent);
+                    BroadcastEvent(iotEvent);
                 }
                 else
                 {

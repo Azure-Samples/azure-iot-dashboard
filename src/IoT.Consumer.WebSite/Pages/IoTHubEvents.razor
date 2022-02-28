@@ -1,7 +1,7 @@
 ﻿@page "/events"
 
 @using System.ComponentModel;
-@using IoT.Consumer.WebSite.Components
+@using IoT.Consumer.WebSite.Pages.Components
 @using IoT.Consumer.WebSite.Events;
 
 @inject IEventReaderService EventService
@@ -13,7 +13,7 @@
 
 <h1>Events from IoT Hub</h1>
 
-<EventList />
+<EventListSignalR />
 
 @code {
     protected override void OnInitialized()
