@@ -1,8 +1,10 @@
 using IoT.Consumer.WebSite.Devices;
 using IoT.Consumer.WebSite.Events;
 using IoT.Consumer.WebSite.SignalR;
+using Microsoft.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddConsole();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
@@ -11,8 +13,8 @@ builder.Services.AddSignalR()
     .AddAzureSignalR();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-builder.Services.AddSingleton<IEventReaderService, EventReaderService>();
-builder.Services.AddSingleton<IDeviceService, DeviceService>();
+builder.Services.AddHostedService<EventProcessor>();
+
 
 var app = builder.Build();
 
@@ -33,7 +35,6 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-app.MapHub<IoTEventsHub>(IoTEventsHub.HubUrl);
-
+app.MapHub<IotEventsHub>(IotEventsHub.HubUrl);
 
 app.Run();

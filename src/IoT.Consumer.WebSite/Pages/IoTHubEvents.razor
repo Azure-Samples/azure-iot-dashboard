@@ -4,7 +4,7 @@
 @using IoT.Consumer.WebSite.Pages.Components
 @using IoT.Consumer.WebSite.Events;
 
-@inject IEventReaderService EventService
+@*@inject IEventReaderService EventService*@
 @implements IDisposable
 
 <PageTitle>IoT Hub Events from Built-In Endpoint</PageTitle>
@@ -18,20 +18,20 @@
 @code {
     protected override void OnInitialized()
     {
-        if (EventService is INotifyPropertyChanged changed)
-        {
-            changed.PropertyChanged += OnChange;
-        }
+        //if (EventService is INotifyPropertyChanged changed)
+        //{
+        //    changed.PropertyChanged += OnChange;
+        //}
 
         StateHasChanged();
     }
 
     public void Dispose()
     {
-        if (EventService is INotifyPropertyChanged changed)
-        {
-            changed.PropertyChanged -= OnChange;
-        }
+        //if (EventService is INotifyPropertyChanged changed)
+        //{
+        //    changed.PropertyChanged -= OnChange;
+        //}
     }
 
     private async void OnChange(object? sender, PropertyChangedEventArgs args)

@@ -2,7 +2,7 @@
 
 namespace IoT.Consumer.WebSite.SignalR
 {
-    public class IoTEventsHub : Hub
+    public class IotEventsHub : Hub
     {
 
         public const string HubUrl = "/deviceevents";

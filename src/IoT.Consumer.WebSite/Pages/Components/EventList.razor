@@ -1,7 +1,6 @@
 ﻿@using System.Reactive.Linq
 @using IoT.Consumer.WebSite.Events
 @inject IEventReaderService EventService
-@implements IDisposable
 
 
 @if (_events is not null)
@@ -47,52 +46,11 @@
 }
 
 
-<div style="height: 7px"></div>
-
-@if (_processorInfo is not null)
-{
-    <div class="list-stream-container">
-        <h5>Event Hub Processor Events</h5>
-        @if (_processorInfo.Count > 0)
-        {
-
-
-            <a href="javascript:void(0);" class="card-link" @onclick="() => _processorInfo?.Clear()">Clear</a>
-            <table class="table" style="max-height: 25%">
-                <tr>
-                    <th scope="col">TimeStamp</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Exception Details</th>
-                </tr>
-                @foreach (var item in _processorInfo)
-                {
-                    <tr>
-                        <td>@item.Timestamp</td>
-                        <td>@item.Type</td>
-                        <td>@item.Description</td>
-                        <td><pre><code>@item.Exception?.ToString()</code></pre></td>
-                    </tr>
-                }
-            </table>
-
-        }
-        else
-        {
-            <div class="alert alert-primary" role="alert">
-                Waiting for processor events...
-            </div>
-        }
-    </div>
-}
-
-
 @code {
     [Parameter]
     public string? DeviceId { get; set; }
 
     private ObservableList<Event>? _events;
-    private ObservableList<EventProcessorInfo>? _processorInfo;
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,19 +65,11 @@
             if (DeviceId is null)
             {
                 _events = new ObservableList<Event>(EventService.Events.ObserveOn(SynchronizationContext.Current), StateHasChanged);
-                _processorInfo = new ObservableList<EventProcessorInfo>(EventService.ProcessorInfo.ObserveOn(SynchronizationContext.Current), StateHasChanged);
             }
             else
             {
                 _events = new ObservableList<Event>(EventService.Events.Where(e => e.DeviceId == DeviceId).ObserveOn(SynchronizationContext.Current), StateHasChanged);
-                _processorInfo = null;
             }
         }
-    }
-
-    public void Dispose()
-    {
-        _events?.Dispose();
-        _processorInfo?.Dispose();
     }
 }
