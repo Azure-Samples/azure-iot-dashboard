@@ -4,7 +4,11 @@
 @using IoT.Consumer.WebSite.Events
 @using Microsoft.Azure.Devices.Serialization
 @using Microsoft.Azure.Devices.Shared
+@implements IAsyncDisposable
 @inject IDeviceService DeviceService
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject ILogger<DeviceService> Logger
 
     @if (_deviceTwin is not null)
     {
@@ -51,7 +55,6 @@
     [Parameter]
     public string? DeviceId { get; set; }
 
-
     private Twin? _deviceTwin;
     private BasicDigitalTwin? _digitalTwin;
     private ModelResult? _modelResult;
@@ -85,6 +88,14 @@
         if (_modelsVisibility != null)
         {
             _modelsVisibility[dtmi] = !_modelsVisibility[dtmi];
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (DeviceService != null)
+        {
+            await DeviceService.DisposeAsync();
         }
     }
 }

@@ -13,6 +13,8 @@ builder.Services.AddSignalR()
     .AddAzureSignalR();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+builder.Services.AddSingleton<IDeviceService, DeviceService>();
+
 builder.Services.AddHostedService<EventProcessor>();
 
 

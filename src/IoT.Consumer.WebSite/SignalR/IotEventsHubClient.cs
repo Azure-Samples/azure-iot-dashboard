@@ -1,21 +1,16 @@
-﻿using IoT.Consumer.WebSite.SignalR;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Routing;
+﻿using IoT.Consumer.WebSite.Events;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Azure.Devices.Client;
-using Microsoft.Rest.TransientFaultHandling;
-using System.Data;
 using System.Diagnostics;
 
-namespace IoT.Consumer.WebSite.Events
+namespace IoT.Consumer.WebSite.SignalR
 {
-    public class IotEventsHubClient : IAsyncDisposable
+    public class IotEventsHubClient : IObservable<Event>, IAsyncDisposable
     {
         //TODO: Message Pack?
         private readonly ILogger _logger;
         private HubConnection? _hubConnection;
+        private List<IObserver<Event>> _eventObservers = new List<IObserver<Event>>();
 
         private string? _currentSubscription;
         
@@ -50,11 +45,19 @@ namespace IoT.Consumer.WebSite.Events
             };
         }
 
-        public async Task SubscribeTelemetryAsync(Action<Event> onEventActionCallback)
+        public IDisposable Subscribe(IObserver<Event> observer)
         {
-            await SubscribeDeviceTelemetryAsync("all-devices", onEventActionCallback);
+            if (!_eventObservers.Contains(observer))
+                _eventObservers.Add(observer);
+
+            return new Unsubscriber<Event>(_eventObservers, observer);
         }
-        public async Task SubscribeDeviceTelemetryAsync(string id, Action<Event> onEventActionCallback)
+
+        public async Task SubscribeTelemetryAsync()
+        {
+            await SubscribeTelemetryAsync("all-devices");
+        }
+        public async Task SubscribeTelemetryAsync(string id)
         {
             if (_hubConnection is not null)
             {
@@ -63,18 +66,21 @@ namespace IoT.Consumer.WebSite.Events
                     await _hubConnection.StartAsync();
                 }
 
-                await UnsubscribeAsync();
+                if (_currentSubscription is not null)
+                {
+                    await UnsubscribeAsync();
+                }
 
                 _currentSubscription = id;
                 await _hubConnection.SendAsync("Subscribe", id);
 
-                _hubConnection.On<Event>("DeviceTelemetry", onEventActionCallback);
+                _hubConnection.On<Event>("DeviceTelemetry", BroadcastEvent);
             }
         }
 
         private async Task UnsubscribeAsync()
         {
-            if (_hubConnection is not null && IsConnected && !String.IsNullOrWhiteSpace(_currentSubscription))
+            if (_hubConnection is not null && IsConnected && _currentSubscription is not null)
             {
                 await _hubConnection.SendAsync("Unsubscribe", _currentSubscription);
             }
@@ -87,6 +93,26 @@ namespace IoT.Consumer.WebSite.Events
                 await UnsubscribeAsync();
                 await _hubConnection.StopAsync();
                 await _hubConnection.DisposeAsync();
+            }
+
+            foreach (var observer in _eventObservers.ToArray())
+            {
+                if (observer != null)
+                {
+                    observer.OnCompleted();
+                }
+            }
+            _eventObservers.Clear();
+        }
+
+        private void BroadcastEvent(Event eventData)
+        {
+            if (eventData != null)
+            {
+                foreach (var observer in _eventObservers)
+                {
+                    observer.OnNext(eventData);
+                }
             }
         }
     }

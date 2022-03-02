@@ -1,12 +1,15 @@
 ﻿@using System.Reactive.Linq
 @using IoT.Consumer.WebSite.Devices
-@inject IDeviceService DeviceService
-@implements IDisposable
+@implements IAsyncDisposable
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject ILogger<DeviceService> Logger;
+
 
 <div class="list-stream-container">
-    @if (DeviceService.Devices is not null)
+    @if (_onlineDevices.Devices is not null)
     {
-        if (DeviceService.Devices.Count > 0)
+        if (_onlineDevices.Devices.Count > 0)
         {
             <a href="javascript:void(0);" class="card-link" @onclick="async () => await RefreshUI()">Refresh</a>
             <table class="table">
@@ -19,7 +22,7 @@
                     <th scope="col">Connected</th>
                 </tr>
 
-                @foreach (var item in DeviceService.Devices.OrderBy(d => d.DeviceId))
+                @foreach (var item in _onlineDevices.Devices.OrderBy(d => d.DeviceId))
                 {
                     <tr>
                         <td><a href=/device/@item.DeviceId>@item.DeviceId</a></td>
@@ -44,9 +47,19 @@
 @code {
     Timer? _timer;
 
+    OnlineDevicesService? _onlineDevices;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+
+        if (SynchronizationContext.Current is not null)
+        {
+            _onlineDevices = new OnlineDevicesService(NavigationManager.BaseUri, Configuration, Logger);
+            await _onlineDevices.Subscribe();
+
+        }
+
         _timer = new Timer(async (object? stateInfo) =>
         {
             await RefreshUI();
@@ -58,8 +71,12 @@
         await InvokeAsync(() => StateHasChanged());
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         _timer?.Dispose();
+        if (_onlineDevices is not null)
+        {
+            await _onlineDevices.DisposeAsync();
+        }
     }
 }

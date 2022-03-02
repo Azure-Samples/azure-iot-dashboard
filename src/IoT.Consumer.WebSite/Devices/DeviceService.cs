@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Microsoft.Rest;
 using Microsoft.Azure.Devices.Serialization;
+using IoT.Consumer.WebSite.SignalR;
 
 namespace IoT.Consumer.WebSite.Devices
 {
@@ -17,60 +18,19 @@ namespace IoT.Consumer.WebSite.Devices
     {
         public List<Device> Devices { get; } = new List<Device>();
 
+        private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
-        private readonly IEventReaderService _eventReader;
         private readonly RegistryManager _registryManager;
         private readonly DigitalTwinClient _digitalTwinClient;
         private readonly ModelsRepositoryClient _modelsRepositoryClient;
 
-        public DeviceService(IEventReaderService eventReader, IConfiguration confiuration)
+        public DeviceService(IConfiguration confiuration, ILogger<DeviceService> logger)
         {
             _configuration = confiuration;
-            _registryManager = RegistryManager.CreateFromConnectionString(_configuration.GetValue<string>("Iot:IotHub"));
-            _digitalTwinClient = DigitalTwinClient.CreateFromConnectionString(_configuration.GetValue<string>("Iot:IotHub"));
+            _logger = logger;
+            _registryManager = RegistryManager.CreateFromConnectionString(_configuration.GetValue<string>("Azure:IotHub:ConnectionString"));
+            _digitalTwinClient = DigitalTwinClient.CreateFromConnectionString(_configuration.GetValue<string>("Azure:IotHub:ConnectionString"));
             _modelsRepositoryClient = new ModelsRepositoryClient();
-            _eventReader = eventReader;
-            _eventReader.Events.Subscribe(UpsertOnlineDevices);
-        }
-
-        private void UpsertOnlineDevices(Event e)
-        {
-            int idx = Devices.FindIndex(d => d.DeviceId == e.DeviceId);
-            if (idx != -1)
-            {
-                if (e.DataSchema != null)
-                {
-                    Devices[idx].ModelId = e.DataSchema;
-                }
-
-                if (e.Operation != null)
-                {
-                    Devices[idx].MessageSource = e.MessageSource;
-                    Devices[idx].LastOperation = e.Operation;
-                    Devices[idx].LastOperationTimestamp = e.EnqueuedTime;
-                    Devices[idx].Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected";
-                }
-
-                if (e.MessageSource == "Telemetry")
-                {                    
-                    Devices[idx].LastTelemetryTimestamp = e.EnqueuedTime;
-                    Devices[idx].Disconnected = false;
-                }
-            }
-            else
-            {
-                var device = new Device()
-                {
-                    DeviceId = e.DeviceId,
-                    ModelId = e.DataSchema,
-                    MessageSource = e.Operation is not null ? e.MessageSource : null,
-                    LastOperation = e.Operation is not null ? e.Operation : null,
-                    LastTelemetryTimestamp = e.MessageSource == "Telemetry" ? e.EnqueuedTime : null,
-                    LastOperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null,
-                    Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected"
-                };
-                Devices.Add(device);
-            }
         }
 
         public async Task<Twin?> GetDeviceTwinAsync(string? deviceId)
@@ -122,7 +82,7 @@ namespace IoT.Consumer.WebSite.Devices
         public ValueTask DisposeAsync()
         {
             _registryManager.Dispose();
-            return _eventReader.DisposeAsync();
+            return ValueTask.CompletedTask;
         }
     }
 }

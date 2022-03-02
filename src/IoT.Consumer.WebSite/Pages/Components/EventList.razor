@@ -1,12 +1,16 @@
 ﻿@using System.Reactive.Linq
 @using IoT.Consumer.WebSite.Events
-@inject IEventReaderService EventService
-
+@using IoT.Consumer.WebSite.SignalR
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Microsoft.AspNetCore.WebUtilities;
+@implements IAsyncDisposable
+@inject NavigationManager NavigationManager
+@inject ILogger<IotEventsHubClient> Logger
 
 @if (_events is not null)
 {
     <div class="list-stream-container" style="height: 630px">
-        <h5>Device Events</h5>
+        <h5>Device Events (web instance '@System.Environment.MachineName')</h5>
         @if (_events.Count > 0)
         {
             <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear</a>
@@ -40,36 +44,44 @@
             <div class="alert alert-primary" role="alert">
                 Waiting for devices events...
             </div>
-
         }
     </div>
 }
+
+<div style="height: 7px"></div>
+
 
 
 @code {
     [Parameter]
     public string? DeviceId { get; set; }
 
+    private IotEventsHubClient? _iotEventsHubClient;
     private ObservableList<Event>? _events;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        InitializeEventList();
+
+        if (SynchronizationContext.Current is not null)
+        {
+            _iotEventsHubClient = new IotEventsHubClient(Logger, NavigationManager.BaseUri);
+            if(DeviceId is null){
+                await _iotEventsHubClient.SubscribeTelemetryAsync();
+            }
+            else{
+                await _iotEventsHubClient.SubscribeTelemetryAsync(DeviceId);
+            }
+
+            _events = new ObservableList<Event>(_iotEventsHubClient.ObserveOn(SynchronizationContext.Current), StateHasChanged);
+        }
     }
 
-    private void InitializeEventList()
+    public async ValueTask DisposeAsync()
     {
-        if (SynchronizationContext.Current != null)
+        if (_iotEventsHubClient is not null)
         {
-            if (DeviceId is null)
-            {
-                _events = new ObservableList<Event>(EventService.Events.ObserveOn(SynchronizationContext.Current), StateHasChanged);
-            }
-            else
-            {
-                _events = new ObservableList<Event>(EventService.Events.Where(e => e.DeviceId == DeviceId).ObserveOn(SynchronizationContext.Current), StateHasChanged);
-            }
+            await _iotEventsHubClient.DisposeAsync();
         }
     }
 }
