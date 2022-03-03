@@ -2,6 +2,7 @@
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.EventHubs.Processor;
 using Azure.Storage.Blobs;
+using IoT.Consumer.WebSite.Devices;
 using IoT.Consumer.WebSite.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
@@ -15,6 +16,7 @@ namespace IoT.Consumer.WebSite.Events
         private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
 
+        private readonly IDeviceService _deviceService;
         private readonly IConfiguration _configuration;
         private readonly IHubContext<IotEventsHub> _signalR;
         private readonly ILogger _logger;
@@ -32,9 +34,9 @@ namespace IoT.Consumer.WebSite.Events
         private DateTime _lastEventReceivedTimeStamp = DateTime.MinValue;
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
 
-        public EventProcessor(IConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventProcessor> logger)
+        public EventProcessor(IDeviceService deviceService, IConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventProcessor> logger)
         {
-
+            _deviceService = deviceService;
             _configuration = configuration;
             _signalR = signalr;
             _lifetime = lifetime;
@@ -109,7 +111,7 @@ namespace IoT.Consumer.WebSite.Events
                 MaximumWaitTime = _maxWaitTime,
                 PrefetchCount = 250,
                 CacheEventCount = 250,
-                Identifier = $"{consumerGroup.Replace("$", "").ToLower()}-web-consumer",
+                //Identifier = $"{Guid.NewGuid()}-{consumerGroup.Replace("$", "").ToLower()}-web-consumer",
                 ConnectionOptions = connectionOptions,
                 RetryOptions = retryOptions
             };
@@ -146,9 +148,10 @@ namespace IoT.Consumer.WebSite.Events
 
                     if (iotEvent.DeviceId is not null)
                     {
-                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceTelemetry", iotEvent); //We are duplicating the messages in the signalR (Consider regarding traffic)
-                        await _signalR.Clients.Groups("all-devices").SendAsync("DeviceTelemetry", iotEvent);
-                        //TODO: think aboute update "active devices table"
+                        _deviceService.UpdateOnlineDevices(iotEvent);
+
+                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent); //We are duplicating the messages in the signalR (Consider regarding traffic)
+                        await _signalR.Clients.Groups("all-devices").SendAsync("DeviceEvent", iotEvent);
                     }
 
                     await Checkpoint(args);
@@ -180,14 +183,14 @@ namespace IoT.Consumer.WebSite.Events
 
         private async Task Checkpoint(ProcessEventArgs args)
         {
-            string partition = args.Partition.PartitionId;
-            int eventsSinceLastCheckpoint = _partitionTracking.AddOrUpdate(key: partition, addValue: 1, updateValueFactory: (_, currentCount) => currentCount + 1);
-            if (eventsSinceLastCheckpoint >= 50)
-            {
+            //string partition = args.Partition.PartitionId;
+            //int eventsSinceLastCheckpoint = _partitionTracking.AddOrUpdate(key: partition, addValue: 1, updateValueFactory: (_, currentCount) => currentCount + 1);
+            //if (eventsSinceLastCheckpoint >= 50)
+            //{
                 //Update the checkpoint every 50 delivered messages //TODO: Check logic for checkpointing
                 await args.UpdateCheckpointAsync();
-                _partitionTracking[partition] = 0;
-            }
+            //    _partitionTracking[partition] = 0;
+            //}
         }
 
         private async Task ProcessErrorAsync(ProcessErrorEventArgs args)

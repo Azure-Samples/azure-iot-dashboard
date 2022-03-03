@@ -12,6 +12,11 @@ namespace IoT.Consumer.WebSite.SignalR
         private HubConnection? _hubConnection;
         private List<IObserver<Event>> _eventObservers = new List<IObserver<Event>>();
 
+        //TODO: Podriamos meter otro cojunto de observers por subtipo de evento???
+        //private List<IObserver<Event>> _deviceTwinChangeObservers = new List<IObserver<Event>>();
+        //private List<IObserver<Event>> _deviceConnectionStateObservers = new List<IObserver<Event>>();
+
+
         private string? _currentSubscription;
         
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
@@ -74,7 +79,7 @@ namespace IoT.Consumer.WebSite.SignalR
                 _currentSubscription = id;
                 await _hubConnection.SendAsync("Subscribe", id);
 
-                _hubConnection.On<Event>("DeviceTelemetry", BroadcastEvent);
+                _hubConnection.On<Event>("DeviceEvent", BroadcastEvent);
             }
         }
 

@@ -5,7 +5,7 @@ namespace IoT.Consumer.WebSite.Events
 {
     public class Event
     {
-        public string? DeviceId { get; set; } = string.Empty;
+        public string DeviceId { get; set; } = string.Empty;
         public string? ModuleId { get; set; } = null;
         public DateTimeOffset EnqueuedTime { get; set; } = DateTimeOffset.MinValue;
         public string? Body { get; set; } = string.Empty;
@@ -13,7 +13,7 @@ namespace IoT.Consumer.WebSite.Events
         public string? Operation { get; set; } = string.Empty;
         public string? AuthMethod { get; set; } = null;
         public string? MessageSource { get; set; } = null;
-        public string? DataSchema { get; set; } = null;
+        public string? ModelId { get; set; } = null;
         public string? Component { get; set; } = null;
         public long? SequenceNumber { get; set; } = null;
         public long? Offset { get; set; } = null;
@@ -49,7 +49,7 @@ namespace IoT.Consumer.WebSite.Events
                     ModuleId = moduleId?.ToString();
 
                     eventData.SystemProperties.TryGetValue("dt-dataschema", out var dataSchema);
-                    DataSchema = dataSchema?.ToString();
+                    ModelId = dataSchema?.ToString();
 
                     eventData.SystemProperties.TryGetValue("dt-subject", out var component);
                     Component = component?.ToString();
