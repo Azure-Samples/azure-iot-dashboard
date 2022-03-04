@@ -1,0 +1,41 @@
+﻿@page "/config"
+@using System.ComponentModel;
+@using IoT.Consumer.WebSite.Pages.Components;
+@using IoT.Consumer.WebSite.Configuration;
+@inject IAppConfiguration Config
+
+<PageTitle>Dashboard Configuration</PageTitle>
+
+<h2>Dashboard Configuration</h2>
+<table class="table">
+      <thead>
+    <tr class="firstrow">
+      <th colspan="2">Current Setting</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td>Iot Hub Host</td>
+        <td>@(Config.IotHubHostName)</td>
+    </tr>
+    <tr>
+        <td>Iot Hub Consumer group</td>
+        <td>@(Config.IotHubConsumerGroup)</td>
+    </tr>
+    <tr>
+        <td>Checkpoint Storage Account</td>
+        <td>@(Config.CheckpointAccountName)</td>
+    </tr>
+    <tr>
+        <td>Checkpoint Container</td>
+        <td>@(Config.CheckpointStaContainer)</td>
+    </tr>
+    <tr>
+        <td>SignalR Endpoint</td>
+        <td>@(Config.SignalREndpoint)</td>
+    </tr>
+    </tbody>
+</table>
+@code{
+
+}

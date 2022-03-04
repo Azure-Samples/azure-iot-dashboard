@@ -1,7 +1,7 @@
+using IoT.Consumer.WebSite.Configuration;
 using IoT.Consumer.WebSite.Devices;
 using IoT.Consumer.WebSite.Events;
 using IoT.Consumer.WebSite.SignalR;
-using Microsoft.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
@@ -13,6 +13,7 @@ builder.Services.AddSignalR()
     .AddAzureSignalR();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+builder.Services.AddSingleton<IAppConfiguration, AppConfiguration>();
 builder.Services.AddSingleton<IDeviceService, DeviceService>();
 
 builder.Services.AddHostedService<EventProcessor>();

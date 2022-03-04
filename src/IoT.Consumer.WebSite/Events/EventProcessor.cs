@@ -2,8 +2,10 @@
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.EventHubs.Processor;
 using Azure.Storage.Blobs;
+using IoT.Consumer.WebSite.Configuration;
 using IoT.Consumer.WebSite.Devices;
 using IoT.Consumer.WebSite.SignalR;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -17,34 +19,38 @@ namespace IoT.Consumer.WebSite.Events
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
 
         private readonly IDeviceService _deviceService;
-        private readonly IConfiguration _configuration;
+        private readonly IAppConfiguration _configuration;
         private readonly IHubContext<IotEventsHub> _signalR;
         private readonly ILogger _logger;
         private readonly CancellationTokenSource _cancellationSource;
         private readonly IHostApplicationLifetime _lifetime;
-        private readonly string _storageAccountConnectionString;
-        private readonly string _storageAccountContainer;
+
 
         private EventProcessorClient? _eventProcessorClient;
         private string _iotHubConnectionString;
         private string _consumerGroup;
-        
+        private string _storageAccountConnectionString;
+        private string _storageAccountContainer;
 
         private int _consecutiveErrorsHandlingEvents = 0;
         private DateTime _lastEventReceivedTimeStamp = DateTime.MinValue;
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
 
-        public EventProcessor(IDeviceService deviceService, IConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventProcessor> logger)
+        public EventProcessor(IDeviceService deviceService, IAppConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventProcessor> logger)
         {
+            if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+            if (deviceService is null) throw new ArgumentNullException(nameof(deviceService));
+            if (signalr is null) throw new ArgumentNullException(nameof(signalr));
+
             _deviceService = deviceService;
             _configuration = configuration;
             _signalR = signalr;
             _lifetime = lifetime;
             _logger = logger;
-            _storageAccountConnectionString = _configuration.GetValue<String>("Azure:CheckpointStorageAccount:ConnectionString");
-            _storageAccountContainer = _configuration.GetValue<String>("Azure:CheckpointStorageAccount:Container") ?? "iot-hub-checkpointing";
-            _iotHubConnectionString = _configuration.GetValue<String>("Azure:IotHub:ConnectionString");
-            _consumerGroup = _configuration.GetValue<String>("Azure:IotHub:ConsumerGroup") ?? EventHubConsumerClient.DefaultConsumerGroupName;
+            _storageAccountConnectionString = _configuration.CheckpointStaConnString ?? throw new Exception("Checkpoint storage configuration setting not set.");
+            _storageAccountContainer = _configuration.CheckpointStaContainer;
+            _iotHubConnectionString = _configuration.IotHubConnStr ?? throw new Exception("IotHub connection string configuration setting not set."); ;
+            _consumerGroup = _configuration.IotHubConsumerGroup;
             _cancellationSource = new CancellationTokenSource();
     }
 
