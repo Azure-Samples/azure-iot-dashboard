@@ -1,20 +1,13 @@
-﻿using IoT.Consumer.WebSite.Events;
-using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Shared;
+﻿using System.Collections.Concurrent;
 using Azure.IoT.ModelsRepository;
-using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-using System;
-using System.Linq.Expressions;
-using System.Reactive.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using Microsoft.Rest;
+using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Serialization;
-using IoT.Consumer.WebSite.SignalR;
-using System.Collections.Concurrent;
-using System.Linq;
+using Microsoft.Azure.Devices.Shared;
+using Microsoft.Rest;
+using Iot.PnpDashboard.Events;
 
-namespace IoT.Consumer.WebSite.Devices
+
+namespace Iot.PnpDashboard.Devices
 {
     public class DeviceService : IDeviceService, IAsyncDisposable
     {

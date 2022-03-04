@@ -1,4 +1,4 @@
-﻿namespace IoT.Consumer.WebSite.Configuration
+﻿namespace Iot.PnpDashboard.Configuration
 {
     public interface IAppConfiguration
     {

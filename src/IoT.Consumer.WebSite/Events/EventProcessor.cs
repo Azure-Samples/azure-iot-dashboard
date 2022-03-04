@@ -1,17 +1,15 @@
-﻿using Azure.Messaging.EventHubs;
+﻿using System.Collections.Concurrent;
+using System.Net.Sockets;
+using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.EventHubs.Processor;
 using Azure.Storage.Blobs;
-using IoT.Consumer.WebSite.Configuration;
-using IoT.Consumer.WebSite.Devices;
-using IoT.Consumer.WebSite.SignalR;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.SignalR;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Net.Sockets;
+using Iot.PnpDashboard.Configuration;
+using Iot.PnpDashboard.Devices;
+using Iot.PnpDashboard.SignalR;
 
-namespace IoT.Consumer.WebSite.Events
+namespace Iot.PnpDashboard.Events
 {
     public class EventProcessor : BackgroundService
     {
@@ -71,73 +69,6 @@ namespace IoT.Consumer.WebSite.Events
             await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
         }
 
-        static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
-        {
-            var startedSource = new TaskCompletionSource();
-            var cancelledSource = new TaskCompletionSource();
-
-            using var reg1 = lifetime.ApplicationStarted.Register(() => startedSource.SetResult());
-            using var reg2 = stoppingToken.Register(() => cancelledSource.SetResult());
-
-            Task completedTask = await Task.WhenAny(
-                startedSource.Task,
-                cancelledSource.Task).ConfigureAwait(false);
-
-            // If the completed tasks was the "app started" task, return true, otherwise false
-            return completedTask == startedSource.Task;
-        }
-
-        private static BlobContainerClient PrepareCheckpointStore(string checkpointStoreConnectionString, string checkpointContainer)
-        {
-            var checkpointStore = new BlobContainerClient(checkpointStoreConnectionString, checkpointContainer);
-            checkpointStore.CreateIfNotExists();
-            return checkpointStore;
-        }
-
-        private async Task<EventProcessorClient> CreateEventProcessorClientAsync(string iotHubConnectionString, string consumerGroup, string storageAccountConnectionString, string container)
-        {
-            //TODO: Include some logging information
-
-            EventHubConnectionOptions connectionOptions = new EventHubConnectionOptions()
-            {
-                ConnectionIdleTimeout = TimeSpan.FromSeconds(30)
-            };
-
-            EventHubsRetryOptions retryOptions = new EventHubsRetryOptions()
-            {
-                Mode = EventHubsRetryMode.Exponential,
-                Delay = TimeSpan.FromSeconds(10),
-                MaximumDelay = TimeSpan.FromSeconds(180),
-                MaximumRetries = 9,
-                TryTimeout = TimeSpan.FromSeconds(15)
-            };
-
-            EventProcessorClientOptions clientOptions = new EventProcessorClientOptions()
-            {
-                MaximumWaitTime = _maxWaitTime,
-                PrefetchCount = 250,
-                CacheEventCount = 250,
-                //Identifier = $"{Guid.NewGuid()}-{consumerGroup.Replace("$", "").ToLower()}-web-consumer",
-                ConnectionOptions = connectionOptions,
-                RetryOptions = retryOptions
-            };
-
-            //TODO: Is possible to obtain the EH Built-in endpoint conn string in other way (REST API, Management API...)??
-            var iotHubConnStrWithDeviceId = !iotHubConnectionString.Contains(";DeviceId=") ? $"{iotHubConnectionString};DeviceId=NoMatterWhichDeviceIs" : iotHubConnectionString;
-            string ehConnString = IotHubConnection.GetEventHubsConnectionStringAsync(iotHubConnStrWithDeviceId).Result;
-
-            var checkpointStore = PrepareCheckpointStore(storageAccountConnectionString, container);
-
-            EventProcessorClient eventProcessor = new EventProcessorClient(checkpointStore, consumerGroup, ehConnString, clientOptions);
-
-            eventProcessor.PartitionInitializingAsync += PartitionInitializingAsync;
-            eventProcessor.PartitionClosingAsync += PartitionClosingAsync;
-            eventProcessor.ProcessEventAsync += ProcessEventAsync;
-            eventProcessor.ProcessErrorAsync += ProcessErrorAsync;
-
-            return await Task.FromResult(eventProcessor);
-        }
-
         private async Task ProcessEventAsync(ProcessEventArgs args)
         {
             try
@@ -156,7 +87,8 @@ namespace IoT.Consumer.WebSite.Events
                     {
                         _deviceService.UpdateOnlineDevices(iotEvent);
 
-                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent); //We are duplicating the messages in the signalR (Consider regarding traffic)
+                        //TODO: ENSURE AND VERIFY SIGNALR SERVER SENT ARE NOT COUNT AGAINST MESSAGE QUOTA
+                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent);
                         await _signalR.Clients.Groups("all-devices").SendAsync("DeviceEvent", iotEvent);
                     }
 
@@ -185,18 +117,6 @@ namespace IoT.Consumer.WebSite.Events
                 }
             }
             return;
-        }
-
-        private async Task Checkpoint(ProcessEventArgs args)
-        {
-            //string partition = args.Partition.PartitionId;
-            //int eventsSinceLastCheckpoint = _partitionTracking.AddOrUpdate(key: partition, addValue: 1, updateValueFactory: (_, currentCount) => currentCount + 1);
-            //if (eventsSinceLastCheckpoint >= 50)
-            //{
-                //Update the checkpoint every 50 delivered messages //TODO: Check logic for checkpointing
-                await args.UpdateCheckpointAsync();
-            //    _partitionTracking[partition] = 0;
-            //}
         }
 
         private async Task ProcessErrorAsync(ProcessErrorEventArgs args)
@@ -249,36 +169,6 @@ namespace IoT.Consumer.WebSite.Events
             {
                 _logger.LogError(ex, $"Unexpected exception handling proccesor error. Unable to recover. The event processing is being cancelled.");
                 _cancellationSource.Cancel();
-            }
-        }
-
-        private async Task RecreateEventProcessorClient(ProcessErrorEventArgs args)
-        {
-            await semaphoreSlim.WaitAsync(); //Ensure only one process is going to execute the reconnection
-            try
-            {
-                if (!_cancellationSource.IsCancellationRequested)
-                {
-                    await StopProcessingAsync();
-
-                    _logger.LogWarning(args.Exception, $"Transient error for Operation '{args.Operation}' in PartitionId '{args.PartitionId}'. Trying to reconnect...");
-
-                    _eventProcessorClient = await CreateEventProcessorClientAsync(_iotHubConnectionString, _consumerGroup, _storageAccountConnectionString, _storageAccountContainer);
-                    await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
-                }
-                else
-                {
-                    //TODO: flag reconnection to ensure we are already in the process of reconnection?
-                    _logger.LogWarning(args.Exception, $"Transient error for Operation '{args.Operation}' in PartitionId '{args.PartitionId}'. Reconnecting process already initiated.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Unexpected exception trying to recover from a transient error");
-            }
-            finally
-            {
-                semaphoreSlim.Release();
             }
         }
 
@@ -336,7 +226,115 @@ namespace IoT.Consumer.WebSite.Events
             return Task.CompletedTask;
         }
 
-        public async Task StopProcessingAsync()
+        static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
+        {
+            var startedSource = new TaskCompletionSource();
+            var cancelledSource = new TaskCompletionSource();
+
+            using var reg1 = lifetime.ApplicationStarted.Register(() => startedSource.SetResult());
+            using var reg2 = stoppingToken.Register(() => cancelledSource.SetResult());
+
+            Task completedTask = await Task.WhenAny(
+                startedSource.Task,
+                cancelledSource.Task).ConfigureAwait(false);
+
+            // If the completed tasks was the "app started" task, return true, otherwise false
+            return completedTask == startedSource.Task;
+        }
+
+        private static BlobContainerClient PrepareCheckpointStore(string checkpointStoreConnectionString, string checkpointContainer)
+        {
+            var checkpointStore = new BlobContainerClient(checkpointStoreConnectionString, checkpointContainer);
+            checkpointStore.CreateIfNotExists();
+            return checkpointStore;
+        }
+
+        private async Task<EventProcessorClient> CreateEventProcessorClientAsync(string iotHubConnectionString, string consumerGroup, string storageAccountConnectionString, string container)
+        {
+            //TODO: Include some logging information
+
+            EventHubConnectionOptions connectionOptions = new EventHubConnectionOptions()
+            {
+                ConnectionIdleTimeout = TimeSpan.FromSeconds(30)
+            };
+
+            EventHubsRetryOptions retryOptions = new EventHubsRetryOptions()
+            {
+                Mode = EventHubsRetryMode.Exponential,
+                Delay = TimeSpan.FromSeconds(10),
+                MaximumDelay = TimeSpan.FromSeconds(180),
+                MaximumRetries = 9,
+                TryTimeout = TimeSpan.FromSeconds(15)
+            };
+
+            EventProcessorClientOptions clientOptions = new EventProcessorClientOptions()
+            {
+                MaximumWaitTime = _maxWaitTime,
+                PrefetchCount = 250,
+                CacheEventCount = 250,
+                ConnectionOptions = connectionOptions,
+                RetryOptions = retryOptions
+            };
+
+            //TODO: Is possible to obtain the EH Built-in endpoint conn string in other way (REST API, Management API...)??
+            var iotHubConnStrWithDeviceId = !iotHubConnectionString.Contains(";DeviceId=") ? $"{iotHubConnectionString};DeviceId=NoMatterWhichDeviceIs" : iotHubConnectionString;
+            string ehConnString = EventHubConnectionResolver.GetConnectionString(iotHubConnStrWithDeviceId).Result;
+
+            var checkpointStore = PrepareCheckpointStore(storageAccountConnectionString, container);
+
+            EventProcessorClient eventProcessor = new EventProcessorClient(checkpointStore, consumerGroup, ehConnString, clientOptions);
+
+            eventProcessor.PartitionInitializingAsync += PartitionInitializingAsync;
+            eventProcessor.PartitionClosingAsync += PartitionClosingAsync;
+            eventProcessor.ProcessEventAsync += ProcessEventAsync;
+            eventProcessor.ProcessErrorAsync += ProcessErrorAsync;
+
+            return await Task.FromResult(eventProcessor);
+        }
+
+        private async Task RecreateEventProcessorClient(ProcessErrorEventArgs args)
+        {
+            await semaphoreSlim.WaitAsync(); //Ensure only one process is going to execute the reconnection
+            try
+            {
+                if (!_cancellationSource.IsCancellationRequested)
+                {
+                    await StopProcessingAsync();
+
+                    _logger.LogWarning(args.Exception, $"Transient error for Operation '{args.Operation}' in PartitionId '{args.PartitionId}'. Trying to reconnect...");
+
+                    _eventProcessorClient = await CreateEventProcessorClientAsync(_iotHubConnectionString, _consumerGroup, _storageAccountConnectionString, _storageAccountContainer);
+                    await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
+                }
+                else
+                {
+                    //TODO: flag reconnection to ensure we are already in the process of reconnection?
+                    _logger.LogWarning(args.Exception, $"Transient error for Operation '{args.Operation}' in PartitionId '{args.PartitionId}'. Reconnecting process already initiated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected exception trying to recover from a transient error");
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
+        }
+
+        private async Task Checkpoint(ProcessEventArgs args)
+        {
+            string partition = args.Partition.PartitionId;
+            int eventsSinceLastCheckpoint = _partitionTracking.AddOrUpdate(key: partition, addValue: 1, updateValueFactory: (_, currentCount) => currentCount + 1);
+            if (eventsSinceLastCheckpoint >= 50)
+            {
+                //Update the checkpoint every 50 delivered messages
+                await args.UpdateCheckpointAsync();
+                _partitionTracking[partition] = 0;
+            }
+        }
+
+        private async Task StopProcessingAsync()
         {
             _cancellationSource.Cancel(); //Is that correct?
             if (_eventProcessorClient is not null)

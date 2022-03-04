@@ -1,7 +1,7 @@
 ﻿@using System.Reactive.Linq
 @using Azure.IoT.ModelsRepository
-@using IoT.Consumer.WebSite.Devices
-@using IoT.Consumer.WebSite.Events
+@using Iot.PnpDashboard.Devices
+@using Iot.PnpDashboard.Events
 @using Microsoft.Azure.Devices.Serialization
 @using Microsoft.Azure.Devices.Shared
 @inject IDeviceService DeviceService
@@ -29,6 +29,7 @@
                             {
                                 @foreach (var dtmi in _modelResult?.Content.Keys)
                                 {
+
                                     <div><a href="" @onclick="@(() => ToggleVisibility(dtmi))" @onclick:preventDefault>@dtmi</a></div>
                                     <div><pre hidden="@(_modelsVisibility != null && _modelsVisibility.ContainsKey(dtmi) ? _modelsVisibility[dtmi] : false)">@LoadModel(dtmi)</pre></div>
                                 }

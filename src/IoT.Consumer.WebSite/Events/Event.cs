@@ -1,24 +1,21 @@
 ﻿using Azure.Messaging.EventHubs;
-using System.Runtime.InteropServices;
 
-namespace IoT.Consumer.WebSite.Events
+namespace Iot.PnpDashboard.Events
 {
     public class Event
     {
-        public string DeviceId { get; set; } = string.Empty;
-        public string? ModuleId { get; set; } = null;
+        public string DeviceId { get; set; } = Guid.NewGuid().ToString();
+        public string? EdgeModuleId { get; set; }
         public DateTimeOffset EnqueuedTime { get; set; } = DateTimeOffset.MinValue;
-        public string? Body { get; set; } = string.Empty;
-        public string? HubName { get; set; } = string.Empty;
-        public string? Operation { get; set; } = string.Empty;
-        public string? AuthMethod { get; set; } = null;
-        public string? MessageSource { get; set; } = null;
+        public string? Body { get; set; } = null;
         public string? ModelId { get; set; } = null;
+        public string? Operation { get; set; } = null;
+        public string? MessageSource { get; set; } = null;
         public string? Component { get; set; } = null;
         public long? SequenceNumber { get; set; } = null;
         public long? Offset { get; set; } = null;
 
-        
+        //public string? HubName { get; set; } = null; TODO: Interesting to have??
 
         public Event()
         {
@@ -33,8 +30,8 @@ namespace IoT.Consumer.WebSite.Events
                 Offset = eventData.Offset;
                 if (eventData.Properties != null)
                 {
-                    eventData.Properties.TryGetValue("hubName", out var hubName);
-                    HubName = hubName?.ToString();
+                    //eventData.Properties.TryGetValue("hubName", out var hubName);
+                    //HubName = hubName?.ToString();
 
                     eventData.Properties.TryGetValue("opType", out var opType);
                     Operation = opType?.ToString();
@@ -43,19 +40,16 @@ namespace IoT.Consumer.WebSite.Events
                 if (eventData.SystemProperties != null)
                 {
                     eventData.SystemProperties.TryGetValue("iothub-connection-device-id", out var deviceId);
-                    DeviceId = deviceId?.ToString();
+                    DeviceId = deviceId?.ToString() ?? throw new Exception("Unable to extract deviceId from the eventData.");
 
                     eventData.SystemProperties.TryGetValue("iothub-connection-module-id", out var moduleId);
-                    ModuleId = moduleId?.ToString();
+                    EdgeModuleId = moduleId?.ToString();
 
                     eventData.SystemProperties.TryGetValue("dt-dataschema", out var dataSchema);
                     ModelId = dataSchema?.ToString();
 
                     eventData.SystemProperties.TryGetValue("dt-subject", out var component);
                     Component = component?.ToString();
-
-                    eventData.SystemProperties.TryGetValue("iothub-connection-auth-method", out var authMethod);
-                    AuthMethod = authMethod?.ToString();
 
                     eventData.SystemProperties.TryGetValue("iothub-message-source", out var messageSource);
                     MessageSource = messageSource?.ToString();

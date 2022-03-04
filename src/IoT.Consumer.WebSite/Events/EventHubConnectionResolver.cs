@@ -11,9 +11,9 @@ using Microsoft.Azure.Amqp.Sasl;
 using Microsoft.Azure.Amqp.Transport;
 using Microsoft.Azure.Devices.Client;
 
-namespace IoT.Consumer.WebSite.Events
+namespace Iot.PnpDashboard.Events
 {
-    public class IotHubConnection
+    public class EventHubConnectionResolver
     {
 
         //From: https://github.com/Azure/azure-sdk-for-net/blob/main/samples/iothub-connect-to-eventhubs/IotHubConnection.cs
@@ -36,7 +36,7 @@ namespace IoT.Consumer.WebSite.Events
         /// <seealso href="https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-read-builtin" />
         /// <seealso href="https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-amqp-support#receive-telemetry-messages-service-client" />
         ///
-        public static async Task<string> GetEventHubsConnectionStringAsync(string iotHubConnectionString,
+        public static async Task<string> GetConnectionString(string iotHubConnectionString,
                                                                                TimeSpan? timeout = default)
         {
             timeout ??= TimeSpan.FromMinutes(1);
@@ -250,7 +250,7 @@ namespace IoT.Consumer.WebSite.Events
                 };
 
                 var link = new ReceivingAmqpLink(linkSettings);
-                linkSettings.LinkName = $"{ nameof(IotHubConnection) };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
+                linkSettings.LinkName = $"{ nameof(EventHubConnectionResolver) };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
                 link.AttachTo(session);
 
                 return link;

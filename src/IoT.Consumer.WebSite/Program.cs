@@ -1,7 +1,7 @@
-using IoT.Consumer.WebSite.Configuration;
-using IoT.Consumer.WebSite.Devices;
-using IoT.Consumer.WebSite.Events;
-using IoT.Consumer.WebSite.SignalR;
+using Iot.PnpDashboard.Configuration;
+using Iot.PnpDashboard.Devices;
+using Iot.PnpDashboard.Events;
+using Iot.PnpDashboard.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();

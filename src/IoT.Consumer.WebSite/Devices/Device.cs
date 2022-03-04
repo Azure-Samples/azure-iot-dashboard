@@ -1,15 +1,15 @@
 ﻿using Microsoft.Azure.Devices.Shared;
 
-namespace IoT.Consumer.WebSite.Devices
+namespace Iot.PnpDashboard.Devices
 {
     public class Device
     {
         public string DeviceId { get; set; } = string.Empty;
-        public string ModelId { get; set; } = string.Empty; //TODO: SHould be ModelId ¿?
+        public string ModelId { get; set; } = string.Empty;
+        public string? MessageSource { get; set; }
         public DateTimeOffset? LastTelemetryTimestamp { get; set; }
         public string? LastOperation { get; set; }
-        public string? MessageSource { get; internal set; }
-        public DateTimeOffset? LastOperationTimestamp { get; internal set; }
+        public DateTimeOffset? LastOperationTimestamp { get; set; }
         public bool? Disconnected { get; set; }
     }
 }

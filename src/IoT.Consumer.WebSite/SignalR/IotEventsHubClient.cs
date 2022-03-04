@@ -1,9 +1,9 @@
-﻿using IoT.Consumer.WebSite.Events;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
-using System.Diagnostics;
+using Iot.PnpDashboard.Events;
 
-namespace IoT.Consumer.WebSite.SignalR
+namespace Iot.PnpDashboard.SignalR
 {
     public class IotEventsHubClient : IObservable<Event>, IAsyncDisposable
     {

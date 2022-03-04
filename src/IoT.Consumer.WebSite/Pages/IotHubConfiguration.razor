@@ -1,16 +1,17 @@
 ﻿@page "/config"
 @using System.ComponentModel;
-@using IoT.Consumer.WebSite.Pages.Components;
-@using IoT.Consumer.WebSite.Configuration;
+@using Iot.PnpDashboard.Pages.Components;
+@using Iot.PnpDashboard.Configuration;
 @inject IAppConfiguration Config
 
-<PageTitle>Dashboard Configuration</PageTitle>
+<PageTitle>App Configuration</PageTitle>
 
-<h2>Dashboard Configuration</h2>
+<h2>App Configuration</h2>
 <table class="table">
       <thead>
     <tr class="firstrow">
-      <th colspan="2">Current Setting</th>
+      <th>Setting</th>
+      <th>Value</th>
     </tr>
   </thead>
   <tbody>

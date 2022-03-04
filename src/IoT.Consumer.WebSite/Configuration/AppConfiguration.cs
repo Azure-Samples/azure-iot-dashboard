@@ -1,6 +1,6 @@
 ﻿using Azure.Messaging.EventHubs.Consumer;
 
-namespace IoT.Consumer.WebSite.Configuration
+namespace Iot.PnpDashboard.Configuration
 {
     public class AppConfiguration : IAppConfiguration
     {

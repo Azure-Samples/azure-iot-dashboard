@@ -1,8 +1,10 @@
 ﻿@using System.Reactive.Linq
-@using IoT.Consumer.WebSite.Events
-@using IoT.Consumer.WebSite.SignalR
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Microsoft.AspNetCore.WebUtilities;
+@using Microsoft.Extensions.Logging
+@using Iot.PnpDashboard.Events
+@using Iot.PnpDashboard.SignalR
+
 @implements IAsyncDisposable
 @inject NavigationManager NavigationManager
 @inject ILogger<IotEventsHubClient> Logger

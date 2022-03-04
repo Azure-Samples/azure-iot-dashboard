@@ -1,4 +1,4 @@
-﻿namespace IoT.Consumer.WebSite
+﻿namespace Iot.PnpDashboard
 {
     class Unsubscriber<T> : IDisposable
     {

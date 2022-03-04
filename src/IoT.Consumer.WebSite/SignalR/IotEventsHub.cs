@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace IoT.Consumer.WebSite.SignalR
+namespace Iot.PnpDashboard.SignalR
 {
     public class IotEventsHub : Hub
     {
@@ -9,14 +9,20 @@ namespace IoT.Consumer.WebSite.SignalR
 
         public async Task Subscribe(string deviceId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, deviceId);
-            Context.Items.Add(deviceId, null);
+            if (!String.IsNullOrEmpty(deviceId))
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, deviceId);
+                Context.Items.Add(deviceId, null);
+            }
         }
 
-        public async Task Unsubscribe(string deviceId)
+        public async Task Unsubscribe(string? deviceId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, deviceId);
-            Context.Items.Remove(deviceId);
+            if (deviceId is not null)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, deviceId);
+                Context.Items.Remove(deviceId);
+            }
         }
 
         public override Task OnConnectedAsync()
@@ -25,7 +31,7 @@ namespace IoT.Consumer.WebSite.SignalR
             return base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception e)
+        public override async Task OnDisconnectedAsync(Exception? e)
         {
             await CleanUpSubscriptions();
 
@@ -35,10 +41,15 @@ namespace IoT.Consumer.WebSite.SignalR
 
         private async Task CleanUpSubscriptions()
         {
-            if (Context.Items.Count > 0)
+            if (Context.Items is not null)
             {
-                foreach (var item in Context.Items)
-                    await Unsubscribe(item.Key as string);
+                if (Context.Items.Count > 0)
+                {
+                    foreach (var item in Context.Items)
+                    {
+                        await Unsubscribe(item.Key as string);
+                    }
+                }
             }
         }
     }

@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Threading;
 
-namespace IoT.Consumer.WebSite
+namespace Iot.PnpDashboard
 {
     public class ObservableList<T> : IReadOnlyCollection<T>, IObserver<T>, IDisposable
     {

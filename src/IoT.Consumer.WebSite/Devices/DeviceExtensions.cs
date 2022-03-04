@@ -1,13 +1,13 @@
-﻿using Azure.IoT.ModelsRepository;
+﻿using System.Text;
+using Azure.IoT.ModelsRepository;
 using Microsoft.Azure.Devices.Serialization;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
 
-namespace IoT.Consumer.WebSite.Devices
+
+namespace Iot.PnpDashboard.Devices
 {
-    public static class Extensions
+    public static class DeviceExtensions
     {
         public static string SerializeTwin(this Twin twin)
         {

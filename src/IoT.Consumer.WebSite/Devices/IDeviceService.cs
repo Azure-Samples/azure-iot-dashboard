@@ -1,9 +1,9 @@
 ﻿using Azure.IoT.ModelsRepository;
-using IoT.Consumer.WebSite.Events;
 using Microsoft.Azure.Devices.Serialization;
 using Microsoft.Azure.Devices.Shared;
+using Iot.PnpDashboard.Events;
 
-namespace IoT.Consumer.WebSite.Devices
+namespace Iot.PnpDashboard.Devices
 {
     public interface IDeviceService : IAsyncDisposable
     {
