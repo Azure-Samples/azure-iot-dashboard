@@ -21,8 +21,9 @@ Now using dotnet user secrets to store connection strings:
 
 ``` cmd
 dotnet user-secret init
-dotnet user-secret set "Iot:IotHub" "<YOUR IOT HUB CONNECTION STRING>"
-dotnet user-secret set "Iot:StorageAccount" "<YOUR IOT HUB CONNECTION STRING>"
+dotnet user-secret set "Azure:IotHub:ConnectionString" "<Your Azure Iot Hub Connection String>"
+dotnet user-secret set "Azure:CheckpointStorageAccount:ConnectionString" "<Your Azure Storage Account -for checkpointing->"
+dotnet user-secret set "Azure:SignalR:ConnectionString" "<Your Azure SignalR service for event broadcasting>" 
 ```
 
 ### Prerequisites
