@@ -1,0 +1,90 @@
+﻿@using System.Reactive.Linq
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Microsoft.AspNetCore.WebUtilities;
+@using Microsoft.Extensions.Logging
+@using Iot.PnpDashboard.Events
+@using Iot.PnpDashboard.EventBroadcast
+
+@implements IAsyncDisposable
+@inject NavigationManager NavigationManager
+@inject ILogger<IotEventsHubClient> Logger
+
+@if (_events is not null)
+{
+    <div class="list-stream-container" style="height: 630px">
+        <h5>Device Events (web instance '@System.Environment.MachineName')</h5>
+        @if (_events.Count > 0)
+        {
+            <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear</a>
+            
+            <table class="table">
+                <tr>
+                    <th scope="col">Enqueued Time</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Operation</th>
+                    <th scope="col">DeviceId</th>
+                    <th scope="col">Model Id</th>
+                    <th scope="col">Component</th>
+                    <th scope="col">Body</th>
+                </tr>
+                @foreach (var item in _events)
+                {
+                    <tr style="vertical-align:top">
+                        <td>@item.EnqueuedTime</td>
+                        <td>@item.MessageSource</td>
+                        <td>@item.Operation</td>
+                        <td>@item.DeviceId</td>
+                        <td>@item.ModelId</td>
+                        <td>@item.Component</td>
+                        <td><pre>@item.Body</pre></td>
+                    </tr>
+                }
+            </table>
+
+        }
+        else
+        {
+            <div class="alert alert-primary" role="alert">
+                Waiting for devices events...
+            </div>
+        }
+    </div>
+}
+
+<div style="height: 7px"></div>
+
+
+
+@code {
+    [Parameter]
+    public string? DeviceId { get; set; }
+
+    private IotEventsHubClient? _iotEventsHubClient;
+    private ObservableList<Event>? _events;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (SynchronizationContext.Current is not null)
+        {
+            _iotEventsHubClient = new IotEventsHubClient(Logger, NavigationManager.BaseUri);
+            if(DeviceId is null){
+                await _iotEventsHubClient.SubscribeTelemetryAsync();
+            }
+            else{
+                await _iotEventsHubClient.SubscribeTelemetryAsync(DeviceId);
+            }
+
+            _events = new ObservableList<Event>(_iotEventsHubClient.ObserveOn(SynchronizationContext.Current), StateHasChanged);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_iotEventsHubClient is not null)
+        {
+            await _iotEventsHubClient.DisposeAsync();
+        }
+    }
+}

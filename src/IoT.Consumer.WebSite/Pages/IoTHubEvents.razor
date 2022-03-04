@@ -1,0 +1,40 @@
+﻿@page "/events"
+
+@using System.ComponentModel;
+@using Iot.PnpDashboard.Pages.Components
+@using Iot.PnpDashboard.Events;
+
+@implements IDisposable
+
+<PageTitle>IoT Hub Events</PageTitle>
+
+
+
+<h1>Events from IoT Hub</h1>
+
+<EventList />
+
+@code {
+    protected override void OnInitialized()
+    {
+        //if (EventService is INotifyPropertyChanged changed)
+        //{
+        //    changed.PropertyChanged += OnChange;
+        //}
+
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        //if (EventService is INotifyPropertyChanged changed)
+        //{
+        //    changed.PropertyChanged -= OnChange;
+        //}
+    }
+
+    private async void OnChange(object? sender, PropertyChangedEventArgs args)
+    {
+        await InvokeAsync(() => StateHasChanged());
+    }
+}

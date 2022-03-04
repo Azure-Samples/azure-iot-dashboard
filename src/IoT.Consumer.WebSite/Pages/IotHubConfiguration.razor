@@ -1,0 +1,42 @@
+﻿@page "/config"
+@using System.ComponentModel;
+@using Iot.PnpDashboard.Pages.Components;
+@using Iot.PnpDashboard.Configuration;
+@inject IAppConfiguration Config
+
+<PageTitle>App Configuration</PageTitle>
+
+<h2>App Configuration</h2>
+<table class="table">
+      <thead>
+    <tr class="firstrow">
+      <th>Setting</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td>Iot Hub Host</td>
+        <td>@(Config.IotHubHostName)</td>
+    </tr>
+    <tr>
+        <td>Iot Hub Consumer group</td>
+        <td>@(Config.IotHubConsumerGroup)</td>
+    </tr>
+    <tr>
+        <td>Checkpoint Storage Account</td>
+        <td>@(Config.CheckpointAccountName)</td>
+    </tr>
+    <tr>
+        <td>Checkpoint Container</td>
+        <td>@(Config.CheckpointStaContainer)</td>
+    </tr>
+    <tr>
+        <td>SignalR Endpoint</td>
+        <td>@(Config.SignalREndpoint)</td>
+    </tr>
+    </tbody>
+</table>
+@code{
+
+}

@@ -1,0 +1,41 @@
+﻿@page "/devices"
+
+@using System.ComponentModel;
+@using Iot.PnpDashboard.Pages.Components;
+@using Iot.PnpDashboard.Devices;
+@inject IDeviceService DeviceService
+@implements IDisposable
+
+<PageTitle>IoT Hub Devices</PageTitle>
+
+
+<h1>Devices</h1>
+
+<h2>Recent activity</h2>
+<DeviceList />
+
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (DeviceService is INotifyPropertyChanged changed)
+        {
+            changed.PropertyChanged += OnChange;
+        }
+
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (DeviceService is INotifyPropertyChanged changed)
+        {
+            changed.PropertyChanged -= OnChange;
+        }
+    }
+
+    private async void OnChange(object? sender, PropertyChangedEventArgs args)
+    {
+        await InvokeAsync(() => StateHasChanged());
+    }
+}

@@ -1,0 +1,110 @@
+﻿@using System.Reactive.Linq
+@using Azure.IoT.ModelsRepository
+@using Iot.PnpDashboard.Devices
+@using Iot.PnpDashboard.Events
+@using Microsoft.Azure.Devices.Serialization
+@using Microsoft.Azure.Devices.Shared
+@inject IDeviceService DeviceService
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject ILogger<DeviceService> Logger
+
+    @if (_deviceTwin is not null)
+    {
+
+            <h4>Device Details</h4>
+            <table class="table">
+                <tr>
+                    <th scope="col">Device Twin</th>
+                    <th scope="col">Digital Twin</th>
+                    <th scope="col">Models</th>
+                </tr>
+                <tr style="vertical-align:top;">
+                    <td><pre style="height: 300px; overflow-y: scroll">@_deviceTwin?.SerializeTwin()</pre></td>
+                    <td><pre style="height: 300px; overflow-y: scroll">@_digitalTwin?.SerializeDigitalTwin()</pre></td>
+                    <td>
+                    <div style="height: 300px; overflow-y: scroll">
+
+                            @if (_modelResult?.Content is not null)
+                            {
+                                @foreach (var dtmi in _modelResult?.Content.Keys)
+                                {
+
+                                    <div><a href="" @onclick="@(() => ToggleVisibility(dtmi))" @onclick:preventDefault>@dtmi</a></div>
+                                    <div><pre hidden="@(_modelsVisibility != null && _modelsVisibility.ContainsKey(dtmi) ? _modelsVisibility[dtmi] : false)">@LoadModel(dtmi)</pre></div>
+                                }
+                            }
+                            else
+                            {
+                                <div>Unable to resolve model.</div>
+                            }
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><a href="" @onclick="@(async () => await RefreshDeviceTwinAsync())"  @onclick:preventDefault>Refresh Device Twin</a></td>
+                    <td><a href="" @onclick="@(async () => await RefreshDigitalTwinAsync())"  @onclick:preventDefault>Refresh Digital Twin</a></td>
+                    <td></td>
+                </tr>
+            </table>
+            <EventList DeviceId="@DeviceId" />
+    }
+    else
+    {
+        <div class="alert alert-primary" role="alert">
+            @_loadingInfo
+        </div>
+    }
+
+@code {
+    [Parameter]
+    public string? DeviceId { get; set; }
+
+    private Twin? _deviceTwin;
+    private BasicDigitalTwin? _digitalTwin;
+    private ModelResult? _modelResult;
+    private string? _model = string.Empty;
+    private Dictionary<string, bool>? _modelsVisibility;
+    private string _loadingInfo = "Loading device information...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _deviceTwin = await DeviceService.GetDeviceTwinAsync(DeviceId);
+        _digitalTwin = await DeviceService.GetDigitalTwinAsync(DeviceId);
+        _modelResult = await DeviceService.ResolveModelAsync(_deviceTwin?.ModelId);
+        if (_modelResult?.Content != null)
+        {
+            _modelsVisibility = _modelResult.Content.Keys.ToDictionary(k => k, k => true);
+        }
+        if(_deviceTwin is null)
+        {
+            _loadingInfo = "Unable to load device information.";
+        }
+    }
+
+    private string LoadModel(string dtmi)
+    {
+        return _modelResult != null ? _modelResult.SerializeDigitalTwinModel(dtmi) : string.Empty;
+    }
+
+    private void ToggleVisibility(string dtmi)
+    {
+        if (_modelsVisibility != null)
+        {
+            _modelsVisibility[dtmi] = !_modelsVisibility[dtmi];
+        }
+    }
+
+    private async Task RefreshDeviceTwinAsync()
+    {
+        _deviceTwin = await DeviceService.GetDeviceTwinAsync(DeviceId);
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private async Task RefreshDigitalTwinAsync()
+    {
+        _digitalTwin = await DeviceService.GetDigitalTwinAsync(DeviceId);
+        await InvokeAsync(() => StateHasChanged());
+    }
+}
