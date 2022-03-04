@@ -7,11 +7,11 @@ using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.SignalR;
 using Iot.PnpDashboard.Configuration;
 using Iot.PnpDashboard.Devices;
-using Iot.PnpDashboard.SignalR;
+using Iot.PnpDashboard.EventBroadcast;
 
 namespace Iot.PnpDashboard.Events
 {
-    public class EventProcessor : BackgroundService
+    public class EventHubProcessorService : BackgroundService
     {
         private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
@@ -34,7 +34,7 @@ namespace Iot.PnpDashboard.Events
         private DateTime _lastEventReceivedTimeStamp = DateTime.MinValue;
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
 
-        public EventProcessor(IDeviceService deviceService, IAppConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventProcessor> logger)
+        public EventHubProcessorService(IDeviceService deviceService, IAppConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventHubProcessorService> logger)
         {
             if (configuration is null) throw new ArgumentNullException(nameof(configuration));
             if (deviceService is null) throw new ArgumentNullException(nameof(deviceService));
@@ -98,7 +98,7 @@ namespace Iot.PnpDashboard.Events
                 {
                     if (DateTime.UtcNow - _lastEventReceivedTimeStamp > _maxWaitTime)
                     {
-                        _logger.LogInformation($"EventProcessor is alive and waiting for events. Last event received at {_lastEventReceivedTimeStamp.ToString()}.");
+                        _logger.LogInformation($"EventHubProcessorService is alive and waiting for events. Last event received at {_lastEventReceivedTimeStamp.ToString()}.");
                     }
                 }
                 _consecutiveErrorsHandlingEvents = 0; //We succeedded processing the event, reset the consecutive errors counter.
@@ -108,11 +108,11 @@ namespace Iot.PnpDashboard.Events
                 _consecutiveErrorsHandlingEvents++;
                 if(_consecutiveErrorsHandlingEvents < 100)
                 {
-                    _logger.LogWarning(ex, "EventProcessor exception handling new event.");
+                    _logger.LogWarning(ex, "EventHubProcessorService exception handling new event.");
                 }
                 else
                 {
-                    _logger.LogError(ex, $"EventProcessor exception. The maximum number of consecutive errors handling events has been reached. Stopping the processing.");
+                    _logger.LogError(ex, $"EventHubProcessorService exception. The maximum number of consecutive errors handling events has been reached. Stopping the processing.");
                     _cancellationSource.Cancel();
                 }
             }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Iot.PnpDashboard.Events;
 
-namespace Iot.PnpDashboard.SignalR
+namespace Iot.PnpDashboard.EventBroadcast
 {
     public class IotEventsHubClient : IObservable<Event>, IAsyncDisposable
     {

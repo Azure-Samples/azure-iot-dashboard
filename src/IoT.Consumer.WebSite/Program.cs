@@ -1,7 +1,7 @@
 using Iot.PnpDashboard.Configuration;
 using Iot.PnpDashboard.Devices;
 using Iot.PnpDashboard.Events;
-using Iot.PnpDashboard.SignalR;
+using Iot.PnpDashboard.EventBroadcast;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
@@ -16,7 +16,7 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddSingleton<IAppConfiguration, AppConfiguration>();
 builder.Services.AddSingleton<IDeviceService, DeviceService>();
 
-builder.Services.AddHostedService<EventProcessor>();
+builder.Services.AddHostedService<EventHubProcessorService>();
 
 
 var app = builder.Build();

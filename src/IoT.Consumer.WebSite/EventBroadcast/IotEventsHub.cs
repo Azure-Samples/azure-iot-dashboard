@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace Iot.PnpDashboard.SignalR
+namespace Iot.PnpDashboard.EventBroadcast
 {
     public class IotEventsHub : Hub
     {
