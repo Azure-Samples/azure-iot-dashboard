@@ -2,6 +2,7 @@ using Iot.PnpDashboard.Configuration;
 using Iot.PnpDashboard.Devices;
 using Iot.PnpDashboard.Events;
 using Iot.PnpDashboard.EventBroadcast;
+using Iot.PnpDashboard.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
@@ -13,11 +14,12 @@ builder.Services.AddSignalR()
     .AddAzureSignalR();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-builder.Services.AddSingleton<IAppConfiguration, AppConfiguration>();
+builder.Services.AddSingleton<AppConfiguration>();
 builder.Services.AddSingleton<IDeviceService, DeviceService>();
+builder.Services.AddSingleton<CheckpointBlobClientFactory>();
+builder.Services.AddSingleton<EventProcessorClientFactory>();
 
 builder.Services.AddHostedService<EventHubProcessorService>();
-
 
 var app = builder.Build();
 
@@ -30,11 +32,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
-
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
