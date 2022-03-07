@@ -12,16 +12,14 @@
     <PackageReference Include="Azure.Messaging.EventHubs" Version="5.6.2" />
     <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.6.2" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.10.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.1.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.2" />
     <PackageReference Include="Microsoft.Azure.Devices" Version="1.37.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.39.0" />
     <PackageReference Include="Microsoft.Azure.SignalR" Version="1.15.2" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
     <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\PublishProfiles\" />
-    <Folder Include="Properties\ServiceDependencies\" />
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31825.309
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Iot.PnpDashboard", "IoT.Consumer.WebSite\Iot.PnpDashboard.csproj", "{C6263315-B64D-40CD-9294-8B7F2836EA62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Iot.PnpDashboard", "Iot.Pnp.Dashboard\Iot.PnpDashboard.csproj", "{84028374-418F-4601-96CE-671106FAB026}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C6263315-B64D-40CD-9294-8B7F2836EA62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C6263315-B64D-40CD-9294-8B7F2836EA62}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C6263315-B64D-40CD-9294-8B7F2836EA62}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C6263315-B64D-40CD-9294-8B7F2836EA62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84028374-418F-4601-96CE-671106FAB026}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84028374-418F-4601-96CE-671106FAB026}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84028374-418F-4601-96CE-671106FAB026}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84028374-418F-4601-96CE-671106FAB026}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
