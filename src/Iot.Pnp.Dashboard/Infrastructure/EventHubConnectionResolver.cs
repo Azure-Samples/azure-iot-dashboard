@@ -45,9 +45,12 @@ namespace Iot.PnpDashboard.Infrastructure
                 throw new ArgumentException("The IoT Hub connection string must be provided.", nameof(iotHubConnectionString));
             }
 
+            
+            //NOTE: This is a way to get the EH Built-in endpoint connection string dynamically. The device Id included is not relevant for the purpose of determine the Event Hub endpoint
+            var iotHubConnStrWithDeviceId = !iotHubConnectionString.Contains(";DeviceId=") ? $"{iotHubConnectionString};DeviceId=NoMatterWhichDeviceIs" : iotHubConnectionString;
+            
             // Parse the connection string into the necessary components, and ensure the information is available.
-
-            var parsedConnectionString = IotHubConnectionStringBuilder.Create(iotHubConnectionString);
+            var parsedConnectionString = IotHubConnectionStringBuilder.Create(iotHubConnStrWithDeviceId);
             var iotHubName = parsedConnectionString.HostName?.Substring(0, parsedConnectionString.HostName.IndexOf('.'));
 
             if ((string.IsNullOrEmpty(parsedConnectionString.HostName)) || (string.IsNullOrEmpty(parsedConnectionString.SharedAccessKeyName)) || (string.IsNullOrEmpty(parsedConnectionString.SharedAccessKey)))

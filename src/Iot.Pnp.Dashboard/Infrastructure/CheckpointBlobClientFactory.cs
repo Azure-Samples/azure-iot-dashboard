@@ -13,7 +13,7 @@ namespace Iot.PnpDashboard.Infrastructure
             _configuration = configuration;
         }
 
-        public async Task<BlobContainerClient> CreateContainerClientAsync()
+        public async Task<BlobContainerClient> CreateAsync()
         {
             if (_configuration.ManagedIdentityEnabled)
             {
@@ -25,11 +25,15 @@ namespace Iot.PnpDashboard.Infrastructure
 
         private async Task<BlobContainerClient> CreateContainerClientWithMSI()
         {
-            // When deployed to an azure host, the default azure credential will authenticate the specified user assigned managed identity.
-            var credential = new DefaultAzureCredential();
-
-            // var storageUrl = "https://iotplaygroundsta.blob.core.windows.net/iot-hub-checkpointing";
+            DefaultAzureCredentialOptions options = new DefaultAzureCredentialOptions()
+            {
+                ManagedIdentityClientId = _configuration.ManagedIdentityClientId ?? null
+            };
+            var credential = new DefaultAzureCredential(options);
+            
             var storageUrl = $"https://{_configuration.CheckpointStaAccountName}.blob.core.windows.net/{_configuration.CheckpointStaContainer}";
+
+            var token = credential.GetToken(new Azure.Core.TokenRequestContext(new string[] { "https://management.azure.com/.default" }));
 
             var checkpointStore = new BlobContainerClient(new Uri(storageUrl), credential);
             await checkpointStore.CreateIfNotExistsAsync();

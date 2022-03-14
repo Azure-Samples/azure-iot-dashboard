@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.EventHubs.Processor;
+using Iot.PnpDashboard.Configuration;
 using Iot.PnpDashboard.Devices;
 using Iot.PnpDashboard.EventBroadcast;
 using Iot.PnpDashboard.Infrastructure;
@@ -15,7 +16,8 @@ namespace Iot.PnpDashboard.Events
         private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
 
-        private readonly IDeviceService _deviceService;
+        private readonly AppConfiguration _configuration;
+        private readonly IOnlineDevices _onlineDevices;
         private readonly EventProcessorClientFactory _processorFactory;
         private readonly IHubContext<IotEventsHub> _signalR;
         private readonly CancellationTokenSource _cancellationSource;
@@ -28,18 +30,18 @@ namespace Iot.PnpDashboard.Events
         private DateTime _lastEventReceivedTimeStamp = DateTime.MinValue;
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
 
-        public EventHubProcessorService(
-            EventProcessorClientFactory processorFactory,
-            IDeviceService deviceService,
+        public EventHubProcessorService(AppConfiguration configuration,
+            IOnlineDevices onlineDevices,
             IHubContext<IotEventsHub> signalr, 
             IHostApplicationLifetime lifetime, 
             ILogger<EventHubProcessorService> logger)
         {
-            if (deviceService is null) throw new ArgumentNullException(nameof(deviceService));
+            if (onlineDevices is null) throw new ArgumentNullException(nameof(onlineDevices));
             if (signalr is null) throw new ArgumentNullException(nameof(signalr));
 
-            _deviceService = deviceService;
-            _processorFactory = processorFactory;
+            _configuration = configuration;
+            _onlineDevices = onlineDevices;
+            _processorFactory = new EventProcessorClientFactory(_configuration);
             _signalR = signalr;
             _lifetime = lifetime;
             _logger = logger;
@@ -59,7 +61,7 @@ namespace Iot.PnpDashboard.Events
 
             });
 
-            _eventProcessorClient = await StartEventProcessorAsync();
+            _eventProcessorClient = await CreateEventProcessorAsync();
             await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
         }
 
@@ -79,7 +81,7 @@ namespace Iot.PnpDashboard.Events
 
                     if (iotEvent.DeviceId is not null)
                     {
-                        _deviceService.UpdateOnlineDevices(iotEvent);
+                        await _onlineDevices.UpdateAsync(iotEvent);
 
                         //TODO: ENSURE AND VERIFY SIGNALR SERVER SENT ARE NOT COUNT AGAINST MESSAGE QUOTA
                         await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent);
@@ -236,10 +238,10 @@ namespace Iot.PnpDashboard.Events
             return completedTask == startedSource.Task;
         }
 
-        private async Task<EventProcessorClient> StartEventProcessorAsync()
+        private async Task<EventProcessorClient> CreateEventProcessorAsync()
         {
             //TODO: Include some logging information
-            var eventProcessor = await _processorFactory.CreateEventProcessorClientAsync();
+            var eventProcessor = await _processorFactory.CreateAsync();
 
             eventProcessor.PartitionInitializingAsync += PartitionInitializingAsync;
             eventProcessor.PartitionClosingAsync += PartitionClosingAsync;
@@ -273,7 +275,7 @@ namespace Iot.PnpDashboard.Events
 
                     _logger.LogWarning(args.Exception, $"Transient error for Operation '{args.Operation}' in PartitionId '{args.PartitionId}'. Trying to reconnect...");
 
-                    _eventProcessorClient = await StartEventProcessorAsync();
+                    _eventProcessorClient = await CreateEventProcessorAsync();
                     await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
                 }
                 else

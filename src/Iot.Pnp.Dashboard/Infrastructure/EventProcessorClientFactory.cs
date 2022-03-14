@@ -1,5 +1,18 @@
-﻿using Azure.Messaging.EventHubs;
+﻿using Azure;
+using Azure.Core;
+using Azure.Identity;
+using Azure.Messaging.EventHubs;
+using Azure.Storage.Blobs;
 using Iot.PnpDashboard.Configuration;
+using Microsoft.Azure.Devices;
+using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Management.IotHub;
+using Microsoft.Rest;
+using System.Globalization;
+using System.Linq.Expressions;
+using System.Security.Cryptography;
+using System.Text;
+using System.Web;
 
 namespace Iot.PnpDashboard.Infrastructure
 {
@@ -7,17 +20,15 @@ namespace Iot.PnpDashboard.Infrastructure
     {
         private readonly AppConfiguration _configuration;
         private readonly CheckpointBlobClientFactory _blobClientFactory;
-        //private readonly ILogger _logger;
 
         public EventProcessorClientFactory(
-            AppConfiguration configuration,
-            CheckpointBlobClientFactory blobClientFactory)
+            AppConfiguration configuration)
         {
             _configuration = configuration;
-            _blobClientFactory = blobClientFactory;
+            _blobClientFactory = new CheckpointBlobClientFactory(_configuration);
         }
 
-        public async Task<EventProcessorClient> CreateEventProcessorClientAsync()
+        public async Task<EventProcessorClient> CreateAsync()
         {
             EventHubConnectionOptions connectionOptions = new EventHubConnectionOptions()
             {
@@ -42,31 +53,49 @@ namespace Iot.PnpDashboard.Infrastructure
                 RetryOptions = retryOptions
             };
 
-            if (_configuration.ManagedIdentityEnabled)
+            string ehConnString = EventHubConnectionResolver.GetConnectionString(_configuration.IotHubConnStr).Result;
+            
+            var checkpointStore = await _blobClientFactory.CreateAsync();
+
+            //if (_configuration.ManagedIdentityEnabled)
+            //{
+            //    var fullyQualifiedNamespace = ehConnString.Split(';').Where(s=> s.StartsWith("Endpoint")).Select(s=> s.Replace("Endpoint=sb://", "").TrimEnd('/')).FirstOrDefault();
+            //    var eventHubName = ehConnString.Split(';').Where(s => s.StartsWith("EntityPath")).Select(s => s.Replace("EntityPath=", "")).FirstOrDefault();
+
+            //    return CreateEventProcessorClientWithMSI(checkpointStore, fullyQualifiedNamespace, eventHubName, clientOptions);
+            //}
+            //else
+            //{
+            //    return CreateEventProcessorClientFromConnStr(checkpointStore, ehConnString, clientOptions);
+            //}
+            return CreateEventProcessorClientFromConnStr(checkpointStore, ehConnString, clientOptions);
+        }
+
+
+        private EventProcessorClient CreateEventProcessorClientWithMSI(BlobContainerClient checkpointStore, string? fullyQualifiedNamespace, string? eventHubName, EventProcessorClientOptions clientOptions)
+        {
+            //TODO: NOTE ABOUT Managed Identity with IoT HUB:
+            //  TO BE ABLE TO RETREIVE THE EVENT HUB CONNECTION STRING DYNAMICALLY, IT IS REQUIRED THE IOT HUB CONNECTION STRING
+            //  WE CAN OPT TO USE IoT Hub Conn Str or the EH Built-in Endpoint. The latter option will limit the ability to be resilent in case of failover.
+            
+            DefaultAzureCredentialOptions options = new DefaultAzureCredentialOptions()
             {
-                return await CreateEventProcessorClientWithMSIAsync(clientOptions);
-            }
+                ManagedIdentityClientId = _configuration.ManagedIdentityClientId ?? null
+            };
+            var credential = new DefaultAzureCredential(options);
 
-            return await CreateEventProcessorClientFromConnStrAsync(clientOptions);
+            EventProcessorClient eventProcessor = new EventProcessorClient(checkpointStore, _configuration.IotHubConsumerGroup, fullyQualifiedNamespace, eventHubName, credential, clientOptions);
+
+            return eventProcessor;
         }
 
-        private async Task<EventProcessorClient> CreateEventProcessorClientWithMSIAsync(EventProcessorClientOptions clientOptions)
+        private EventProcessorClient CreateEventProcessorClientFromConnStr(BlobContainerClient checkpointStore, string ehConnString, EventProcessorClientOptions clientOptions)
         {
-            throw new NotImplementedException();
-        }
+            //TODO: NOTE ABOUT Managed Identity with IoT HUB:
+            //  TO BE ABLE TO RETREIVE THE EVENT HUB CONNECTION STRING DYNAMICALLY, IT IS REQUIRED THE IOT HUB CONNECTION STRING
+            //  WE CAN OPT TO USE IoT Hub Conn Str or the EH Built-in Endpoint. The latter option will limit the ability to be resilent in case of failover.
 
-        private async Task<EventProcessorClient> CreateEventProcessorClientFromConnStrAsync(EventProcessorClientOptions clientOptions)
-        {
-            var iotHubConnectionString = _configuration.IotHubConnStr;
-            var consumerGroup = _configuration.IotHubConsumerGroup;
-
-            //TODO: Is possible to obtain the EH Built-in endpoint conn string in other way (REST API, Management API...)??
-            var iotHubConnStrWithDeviceId = !iotHubConnectionString.Contains(";DeviceId=") ? $"{iotHubConnectionString};DeviceId=NoMatterWhichDeviceIs" : iotHubConnectionString;
-            string ehConnString = EventHubConnectionResolver.GetConnectionString(iotHubConnStrWithDeviceId).Result;
-
-            var checkpointStore = await _blobClientFactory.CreateContainerClientAsync();
-
-            EventProcessorClient eventProcessor = new EventProcessorClient(checkpointStore, consumerGroup, ehConnString, clientOptions);
+            EventProcessorClient eventProcessor = new EventProcessorClient(checkpointStore, _configuration.IotHubConsumerGroup, ehConnString, clientOptions);
 
             return eventProcessor;
         }

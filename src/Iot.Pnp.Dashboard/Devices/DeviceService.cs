@@ -5,74 +5,41 @@ using Microsoft.Azure.Devices.Serialization;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Rest;
 using Iot.PnpDashboard.Events;
-
+using Iot.PnpDashboard.Infrastructure;
+using Iot.PnpDashboard.Configuration;
 
 namespace Iot.PnpDashboard.Devices
 {
     public class DeviceService : IDeviceService, IAsyncDisposable
     {
-        public IEnumerable<Device> OnlineDevices { get { return _onlineDevices.Values; } }
-
+        private readonly AppConfiguration _configuration;
+        private readonly IOnlineDevices _onlineDevices;
         private readonly ILogger _logger;
-        private readonly IConfiguration _configuration;
         private readonly RegistryManager _registryManager;
         private readonly DigitalTwinClient _digitalTwinClient;
         private readonly ModelsRepositoryClient _modelsRepositoryClient;
-        private readonly ConcurrentDictionary<string, Device> _onlineDevices;
 
-        public DeviceService(IConfiguration confiuration, ILogger<DeviceService> logger)
+        public DeviceService(AppConfiguration configuration, IOnlineDevices onlineDevices, ILogger<DeviceService> logger)
         {
-            _configuration = confiuration;
+            
+            _configuration = configuration;
+            _onlineDevices = onlineDevices;
             _logger = logger;
-            _registryManager = RegistryManager.CreateFromConnectionString(_configuration.GetValue<string>("Azure:IotHub:ConnectionString"));
-            _digitalTwinClient = DigitalTwinClient.CreateFromConnectionString(_configuration.GetValue<string>("Azure:IotHub:ConnectionString"));
+            
             _modelsRepositoryClient = new ModelsRepositoryClient();
-            _onlineDevices = new ConcurrentDictionary<string, Device>();
+            
+            var registryManagerFactory = new RegistryManagerFactory(_configuration);
+            _registryManager = registryManagerFactory.Create();
+
+            var digitalTwinClientFactory = new DigitalTwinClientFactory(_configuration);
+            _digitalTwinClient = digitalTwinClientFactory.Create();
         }
 
-        public void UpdateOnlineDevices(Event e)
-        {
-            if (e is not null)
-            {
-                if (_onlineDevices.ContainsKey(e.DeviceId))
-                {
-                    Device toUpdate = _onlineDevices[e.DeviceId];
-                    if (e.ModelId != null)
-                    {
-                        toUpdate.ModelId = e.ModelId;
-                    }
-
-                    if (e.Operation != null)
-                    {
-                        toUpdate.MessageSource = e.MessageSource;
-                        toUpdate.LastOperation = e.Operation;
-                        toUpdate.LastOperationTimestamp = e.EnqueuedTime;
-                        toUpdate.Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected";
-                    }
-
-                    if (e.MessageSource == "Telemetry")
-                    {
-                        toUpdate.LastTelemetryTimestamp = e.EnqueuedTime;
-                        toUpdate.Disconnected = false;
-                    }
-                    _onlineDevices[e.DeviceId] = toUpdate;
-                }
-                else
-                {
-                    var device = new Device()
-                    {
-                        DeviceId = e.DeviceId,
-                        ModelId = e.ModelId ?? string.Empty,
-                        MessageSource = e.Operation is not null ? e.MessageSource : null,
-                        LastOperation = e.Operation is not null ? e.Operation : null,
-                        LastTelemetryTimestamp = e.MessageSource == "Telemetry" ? e.EnqueuedTime : null,
-                        LastOperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null,
-                        Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected"
-                    };
-                    _onlineDevices.TryAdd(e.DeviceId, device);
-                }
-            }
-        }
+        public async Task<IEnumerable<Device>> GetOnlineDevicesAsync(string? namePattern = default, int pageSize = 100, int pageOffset = 0)
+            => await _onlineDevices.GetAsync(namePattern, pageSize, pageOffset);
+        
+        public async Task<long> OnlineDevicesCountAsync()
+            => await _onlineDevices.CountAsync();
 
         public async Task<Twin?> GetDeviceTwinAsync(string? deviceId)
         {
