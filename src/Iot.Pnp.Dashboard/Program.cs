@@ -40,7 +40,7 @@ builder.Services.AddSignalR( options=> options.EnableDetailedErrors = true )
     });
 
 builder.Services.AddSingleton<AppConfiguration>();
-builder.Services.AddSingleton<IOnlineDevices, OnlineDevicesCache>();
+builder.Services.AddSingleton<IOnlineDevices, OnlineDevicesRedisPubSub>();
 builder.Services.AddSingleton<IDeviceService, DeviceService>();
 builder.Services.AddHostedService<EventHubProcessorService>();
 

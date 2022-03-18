@@ -3,17 +3,20 @@
     @if (Data != null)  
     {  
         foreach (var item in Data)  
-        {  
-            var Text = TextField?.Invoke(item);  
-            var Value = ValueField?.Invoke(item).ToString();  
-            bool Checked = false;  
-            if (SelectedValues.Contains(Value))  
-            {  
-                Checked = true;  
-            }  
-            <input type="checkbox" checked=@Checked  
+        {
+            if (item != null)
+            {
+                var Text = TextField?.Invoke(item);
+                var Value = ValueField?.Invoke(item).ToString();
+                bool Checked = false;
+                if (SelectedValues.Contains(Value))
+                {
+                    Checked = true;
+                }
+                <input type="checkbox" checked=@Checked  
                    @onchange="(async eventArgs => { await CheckboxClicked(Value, eventArgs.Value); })" />  
-            @Text <br />  
+                @Text <br />
+            }
         }  
     }  
     @ChildContent  

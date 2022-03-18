@@ -6,6 +6,7 @@ using Iot.PnpDashboard.Devices;
 using Iot.PnpDashboard.EventBroadcast;
 using Iot.PnpDashboard.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Azure;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 
@@ -82,9 +83,8 @@ namespace Iot.PnpDashboard.Events
                     if (iotEvent.DeviceId is not null)
                     {
                         //TODO: ENSURE AND VERIFY SIGNALR SERVER SENT ARE NOT COUNT AGAINST MESSAGE QUOTA
-                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent);
-
-                        _onlineDevices.UpdateAsync(iotEvent); //TODO: FireAndForget
+                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent).ConfigureAwait(false);
+                        await ((OnlineDevicesRedisPubSub)_onlineDevices).PublishAsync(iotEvent).ConfigureAwait(false); //TODO: FireAndForget
                     }
 
                     await UpdateCheckpointAsync(args);
