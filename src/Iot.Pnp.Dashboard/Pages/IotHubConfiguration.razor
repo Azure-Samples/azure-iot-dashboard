@@ -2,7 +2,7 @@
 @using System.ComponentModel;
 @using Iot.PnpDashboard.Pages.Components;
 @using Iot.PnpDashboard.Configuration;
-@inject IAppConfiguration Config
+@inject AppConfiguration Config
 
 <PageTitle>App Configuration</PageTitle>
 
@@ -25,7 +25,7 @@
     </tr>
     <tr>
         <td>Checkpoint Storage Account</td>
-        <td>@(Config.CheckpointAccountName)</td>
+        <td>@(Config.CheckpointStaAccountName)</td>
     </tr>
     <tr>
         <td>Checkpoint Container</td>
@@ -34,6 +34,10 @@
     <tr>
         <td>SignalR Endpoint</td>
         <td>@(Config.SignalREndpoint)</td>
+    </tr>
+    <tr>
+        <td>Redis Host</td>
+        <td>@(Config.RedisHostName):@(Config.RedisPort)</td>
     </tr>
     </tbody>
 </table>

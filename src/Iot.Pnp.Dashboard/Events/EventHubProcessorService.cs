@@ -1,13 +1,15 @@
-﻿using System.Collections.Concurrent;
-using System.Net.Sockets;
-using Azure.Messaging.EventHubs;
+﻿using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.EventHubs.Processor;
-using Azure.Storage.Blobs;
-using Microsoft.AspNetCore.SignalR;
 using Iot.PnpDashboard.Configuration;
 using Iot.PnpDashboard.Devices;
 using Iot.PnpDashboard.EventBroadcast;
+using Iot.PnpDashboard.Infrastructure;
+using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
+using StackExchange.Redis;
+using System.Collections.Concurrent;
+using System.Net.Sockets;
 
 namespace Iot.PnpDashboard.Events
 {
@@ -16,39 +18,37 @@ namespace Iot.PnpDashboard.Events
         private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
 
-        private readonly IDeviceService _deviceService;
-        private readonly IAppConfiguration _configuration;
+        private readonly AppConfiguration _configuration;
+        private readonly ConnectionMultiplexer _cacheConnection;
+        private readonly ISubscriber _onlineDevicesSubscriber;
+        private readonly EventProcessorClientFactory _processorFactory;
         private readonly IHubContext<IotEventsHub> _signalR;
-        private readonly ILogger _logger;
         private readonly CancellationTokenSource _cancellationSource;
         private readonly IHostApplicationLifetime _lifetime;
-
+        private readonly ILogger _logger;
 
         private EventProcessorClient? _eventProcessorClient;
-        private string _iotHubConnectionString;
-        private string _consumerGroup;
-        private string _storageAccountConnectionString;
-        private string _storageAccountContainer;
 
         private int _consecutiveErrorsHandlingEvents = 0;
         private DateTime _lastEventReceivedTimeStamp = DateTime.MinValue;
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
 
-        public EventHubProcessorService(IDeviceService deviceService, IAppConfiguration configuration, IHubContext<IotEventsHub> signalr, IHostApplicationLifetime lifetime, ILogger<EventHubProcessorService> logger)
+        public EventHubProcessorService(AppConfiguration configuration,
+            RedisConnectionFactory redisConnectionFactory,
+            IHubContext<IotEventsHub> signalr, 
+            IHostApplicationLifetime lifetime, 
+            ILogger<EventHubProcessorService> logger)
         {
-            if (configuration is null) throw new ArgumentNullException(nameof(configuration));
-            if (deviceService is null) throw new ArgumentNullException(nameof(deviceService));
             if (signalr is null) throw new ArgumentNullException(nameof(signalr));
 
-            _deviceService = deviceService;
             _configuration = configuration;
+            var _cacheConnectionFactory = new RedisConnectionFactory(configuration);
+            _cacheConnection = redisConnectionFactory.GetConnection();
+            _onlineDevicesSubscriber = _cacheConnection.GetSubscriber();
+            _processorFactory = new EventProcessorClientFactory(_configuration);
             _signalR = signalr;
             _lifetime = lifetime;
             _logger = logger;
-            _storageAccountConnectionString = _configuration.CheckpointStaConnString ?? throw new Exception("Checkpoint storage configuration setting not set.");
-            _storageAccountContainer = _configuration.CheckpointStaContainer;
-            _iotHubConnectionString = _configuration.IotHubConnStr ?? throw new Exception("IotHub connection string configuration setting not set."); ;
-            _consumerGroup = _configuration.IotHubConsumerGroup;
             _cancellationSource = new CancellationTokenSource();
     }
 
@@ -61,11 +61,11 @@ namespace Iot.PnpDashboard.Events
 
             _lifetime.ApplicationStopping.Register(async () =>
             {
-                await StopProcessingAsync();
+                await StopEventProcessorAsync();
 
             });
 
-            _eventProcessorClient = await CreateEventProcessorClientAsync(_iotHubConnectionString, _consumerGroup, _storageAccountConnectionString, _storageAccountContainer);
+            _eventProcessorClient = await CreateEventProcessorAsync();
             await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
         }
 
@@ -85,14 +85,14 @@ namespace Iot.PnpDashboard.Events
 
                     if (iotEvent.DeviceId is not null)
                     {
-                        _deviceService.UpdateOnlineDevices(iotEvent);
+                        //Send the event to the device group
+                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent).ConfigureAwait(false);
 
-                        //TODO: ENSURE AND VERIFY SIGNALR SERVER SENT ARE NOT COUNT AGAINST MESSAGE QUOTA
-                        await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent);
-                        await _signalR.Clients.Groups("all-devices").SendAsync("DeviceEvent", iotEvent);
+                        //send the event to the online devices channel in redis
+                        await PublisOnlineDeviceEventAsync(iotEvent).ConfigureAwait(false);
                     }
 
-                    await Checkpoint(args);
+                    await UpdateCheckpointAsync(args);
                 }
                 else
                 {
@@ -118,7 +118,6 @@ namespace Iot.PnpDashboard.Events
             }
             return;
         }
-
         private async Task ProcessErrorAsync(ProcessErrorEventArgs args)
         {
             try
@@ -149,7 +148,7 @@ namespace Iot.PnpDashboard.Events
                     (args.Exception is EventHubsException && ((EventHubsException)args.Exception).Message.Contains("Namespace cannot be resolved")))
 
                 {
-                    await RecreateEventProcessorClient(args);
+                    await RestartEventProcessorAsync(args);
                 }
                 else if (_eventProcessorClient is not null && !_eventProcessorClient.IsRunning && !_cancellationSource.IsCancellationRequested)
                 {
@@ -226,7 +225,7 @@ namespace Iot.PnpDashboard.Events
             return Task.CompletedTask;
         }
 
-        static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
+        private async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
         {
             var startedSource = new TaskCompletionSource();
             var cancelledSource = new TaskCompletionSource();
@@ -242,68 +241,44 @@ namespace Iot.PnpDashboard.Events
             return completedTask == startedSource.Task;
         }
 
-        private static BlobContainerClient PrepareCheckpointStore(string checkpointStoreConnectionString, string checkpointContainer)
-        {
-            var checkpointStore = new BlobContainerClient(checkpointStoreConnectionString, checkpointContainer);
-            checkpointStore.CreateIfNotExists();
-            return checkpointStore;
-        }
-
-        private async Task<EventProcessorClient> CreateEventProcessorClientAsync(string iotHubConnectionString, string consumerGroup, string storageAccountConnectionString, string container)
+        private async Task<EventProcessorClient> CreateEventProcessorAsync()
         {
             //TODO: Include some logging information
-
-            EventHubConnectionOptions connectionOptions = new EventHubConnectionOptions()
-            {
-                ConnectionIdleTimeout = TimeSpan.FromSeconds(30)
-            };
-
-            EventHubsRetryOptions retryOptions = new EventHubsRetryOptions()
-            {
-                Mode = EventHubsRetryMode.Exponential,
-                Delay = TimeSpan.FromSeconds(10),
-                MaximumDelay = TimeSpan.FromSeconds(180),
-                MaximumRetries = 9,
-                TryTimeout = TimeSpan.FromSeconds(15)
-            };
-
-            EventProcessorClientOptions clientOptions = new EventProcessorClientOptions()
-            {
-                MaximumWaitTime = _maxWaitTime,
-                PrefetchCount = 250,
-                CacheEventCount = 250,
-                ConnectionOptions = connectionOptions,
-                RetryOptions = retryOptions
-            };
-
-            //TODO: Is possible to obtain the EH Built-in endpoint conn string in other way (REST API, Management API...)??
-            var iotHubConnStrWithDeviceId = !iotHubConnectionString.Contains(";DeviceId=") ? $"{iotHubConnectionString};DeviceId=NoMatterWhichDeviceIs" : iotHubConnectionString;
-            string ehConnString = EventHubConnectionResolver.GetConnectionString(iotHubConnStrWithDeviceId).Result;
-
-            var checkpointStore = PrepareCheckpointStore(storageAccountConnectionString, container);
-
-            EventProcessorClient eventProcessor = new EventProcessorClient(checkpointStore, consumerGroup, ehConnString, clientOptions);
+            var eventProcessor = await _processorFactory.CreateAsync();
 
             eventProcessor.PartitionInitializingAsync += PartitionInitializingAsync;
             eventProcessor.PartitionClosingAsync += PartitionClosingAsync;
             eventProcessor.ProcessEventAsync += ProcessEventAsync;
             eventProcessor.ProcessErrorAsync += ProcessErrorAsync;
 
-            return await Task.FromResult(eventProcessor);
+            return eventProcessor;
         }
 
-        private async Task RecreateEventProcessorClient(ProcessErrorEventArgs args)
+        private async Task StopEventProcessorAsync()
+        {
+            _cancellationSource.Cancel(); //Is that correct?
+            if (_eventProcessorClient is not null)
+            {
+                await _eventProcessorClient.StopProcessingAsync(_cancellationSource.Token);
+                _eventProcessorClient.PartitionInitializingAsync -= PartitionInitializingAsync;
+                _eventProcessorClient.PartitionClosingAsync -= PartitionClosingAsync;
+                _eventProcessorClient.ProcessEventAsync -= ProcessEventAsync;
+                _eventProcessorClient.ProcessErrorAsync -= ProcessErrorAsync;
+            }
+        }
+
+        private async Task RestartEventProcessorAsync(ProcessErrorEventArgs args)
         {
             await semaphoreSlim.WaitAsync(); //Ensure only one process is going to execute the reconnection
             try
             {
                 if (!_cancellationSource.IsCancellationRequested)
                 {
-                    await StopProcessingAsync();
+                    await StopEventProcessorAsync();
 
                     _logger.LogWarning(args.Exception, $"Transient error for Operation '{args.Operation}' in PartitionId '{args.PartitionId}'. Trying to reconnect...");
 
-                    _eventProcessorClient = await CreateEventProcessorClientAsync(_iotHubConnectionString, _consumerGroup, _storageAccountConnectionString, _storageAccountContainer);
+                    _eventProcessorClient = await CreateEventProcessorAsync();
                     await _eventProcessorClient.StartProcessingAsync(_cancellationSource.Token);
                 }
                 else
@@ -322,7 +297,7 @@ namespace Iot.PnpDashboard.Events
             }
         }
 
-        private async Task Checkpoint(ProcessEventArgs args)
+        private async Task UpdateCheckpointAsync(ProcessEventArgs args)
         {
             string partition = args.Partition.PartitionId;
             int eventsSinceLastCheckpoint = _partitionTracking.AddOrUpdate(key: partition, addValue: 1, updateValueFactory: (_, currentCount) => currentCount + 1);
@@ -332,19 +307,11 @@ namespace Iot.PnpDashboard.Events
                 await args.UpdateCheckpointAsync();
                 _partitionTracking[partition] = 0;
             }
-        }
-
-        private async Task StopProcessingAsync()
+        }  
+        
+        private async Task PublisOnlineDeviceEventAsync(Event iotEvent)
         {
-            _cancellationSource.Cancel(); //Is that correct?
-            if (_eventProcessorClient is not null)
-            {
-                await _eventProcessorClient.StopProcessingAsync(_cancellationSource.Token);
-                _eventProcessorClient.PartitionInitializingAsync -= PartitionInitializingAsync;
-                _eventProcessorClient.PartitionClosingAsync -= PartitionClosingAsync;
-                _eventProcessorClient.ProcessEventAsync -= ProcessEventAsync;
-                _eventProcessorClient.ProcessErrorAsync -= ProcessErrorAsync;
-            }
+            await _onlineDevicesSubscriber.PublishAsync(OnlineDevicesService.Channel, JsonConvert.SerializeObject(iotEvent)).ConfigureAwait(false);
         }
     }
 }

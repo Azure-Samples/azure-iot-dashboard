@@ -4,9 +4,23 @@
 @implements IDisposable
 
 <div class="list-stream-container">
-    @if (DeviceService.OnlineDevices is not null)
+    @if (_devicesToShow is not null)
     {
-        if (DeviceService.OnlineDevices.Count() > 0)
+        <div>
+            <p>Online Devices: @_totalDevicesOnline @(String.IsNullOrWhiteSpace(_nameFilter) ? "" : $"| {_devicesToShow.Count} matching DeviceId={_nameFilter}")</p>
+            <div class="inline-fields">
+                <p>
+                    Showing page <label>@_currentPage</label> of <label>@( _pages )</label>
+                    <button class="btn btn-primary" onclick="@(async () => await DecrementPage())">Page --</button> 
+                    <button class="btn btn-primary" onclick="@(async () => await IncrementPage())">Page ++</button> 
+                    Filter by DeviceId: <input type="text" @bind="_nameFilter" />
+                    Page Size: <input type="text" @bind="_pageSize"/> 
+                    <button class="btn btn-primary" onclick="@(async () => await ApplyFilter())">Apply</button>
+                    <label hidden="@(!_showLoading)">&nbsp;&nbsp;Loading...</label>
+                </p>
+            </div>
+        </div>
+        if (_devicesToShow.Count > 0)
         {
             <table class="table">
                 <tr>
@@ -18,19 +32,21 @@
                     <th scope="col">Connected</th>
                 </tr>
 
-                @foreach (var item in DeviceService.OnlineDevices.OrderBy(d => d.DeviceId))
+                @foreach (var item in _devicesToShow)
                 {
                     <tr>
                         <td><a href=/device/@item.DeviceId>@item.DeviceId</a></td>
                         <td>@item.ModelId</td>
-                        <td>@(item.LastOperation is not null ? $"[{ item.LastOperationTimestamp }] { item.LastOperation }" : "-")</td>
-                        <td>@(item.LastOperation is not null ? item.MessageSource : "-")</td>
-                        <td>@item.LastTelemetryTimestamp</td>
-                        <td>@(!item.Disconnected) @((item.Disconnected.HasValue && !item.Disconnected.Value) && (item.LastTelemetryTimestamp != null && (item.LastTelemetryTimestamp < DateTime.UtcNow.AddMinutes(-5))) ? "?" : "")</td>
+                        <td>@(item.LastOperation is not null ? $"{ item.LastOperation } [{ item.OperationTimestamp }]" : "-")</td>
+                        <td>@(item.OperationSource is not null ? item.OperationSource : "-")</td>
+                        <td>@item.TelemetryTimestamp</td>
+                        <td>@(!item.Disconnected) @((item.Disconnected.HasValue && !item.Disconnected.Value) && (item.TelemetryTimestamp != null && (item.TelemetryTimestamp < DateTime.UtcNow.AddMinutes(-5))) ? "?" : "")</td>
                     </tr>
                 }
             </table>
+            <div>
 
+            </div>
         }
         else
         {
@@ -42,19 +58,78 @@
 </div>
 @code {
     Timer? _timer;
+    List<Device>? _devicesToShow;
+    private const int DefaultPageSize = 15;
+    private string? _nameFilter { get; set; }
+    private int _pageSize { get; set; }
+    private int _currentPage { get; set; }
+    private int _pages { get; set; }
+    private long _totalDevicesOnline;
+    private bool _showLoading = false;
+
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        _pageSize = DefaultPageSize;
+        _currentPage = 1;
+        _totalDevicesOnline = await DeviceService.OnlineDevicesCountAsync();
+        _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_totalDevicesOnline) / _pageSize)) : DefaultPageSize;
+        await RefreshUI();
         _timer = new Timer(async (object? stateInfo) =>
         {
-            await RefreshUI();
-        }, new System.Threading.AutoResetEvent(false), 0, 1000);
-    }
+            if (!_showLoading)
+            {
+                await RefreshUI(); 
+            }
+        }, new System.Threading.AutoResetEvent(false), 2000, 1500);
+    } 
 
+    private async Task ApplyFilter()
+    {
+        if (!String.IsNullOrWhiteSpace(_nameFilter))
+        {
+            _nameFilter = _nameFilter.StartsWith('*') ? _nameFilter?.TrimStart('*') : _nameFilter;
+        }
+
+        if(_pageSize < 1)
+        {
+            _pageSize = DefaultPageSize;
+        }
+
+        await RefreshUI();
+    }
+    private async Task IncrementPage()
+    {
+        if(_currentPage < _pages)
+        {
+            _currentPage++;
+            await RefreshUI();
+        }
+    }
+    private async Task DecrementPage()
+    {
+        if(_currentPage > 1)
+        {
+            _currentPage--;
+            await RefreshUI();
+        }
+    }
     private async Task RefreshUI()
     {
-        await InvokeAsync(() => StateHasChanged());
+        await InvokeAsync(async () =>
+        {
+            _showLoading = true;
+            _devicesToShow = (await DeviceService.GetOnlineDevicesAsync(_nameFilter, _pageSize, _currentPage-1)).ToList();
+            _totalDevicesOnline = await DeviceService.OnlineDevicesCountAsync();
+            _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_totalDevicesOnline) / _pageSize)) : DefaultPageSize;
+            if(_currentPage > _pages)
+            {
+                _currentPage = _pages;
+            }
+            _showLoading = false;
+            StateHasChanged();
+        });
     }
 
     public void Dispose()

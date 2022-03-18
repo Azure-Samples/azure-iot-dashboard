@@ -17,8 +17,10 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.2" />
     <PackageReference Include="Microsoft.Azure.Devices" Version="1.37.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.39.0" />
+    <PackageReference Include="Microsoft.Azure.Management.IotHub" Version="4.2.0" />
     <PackageReference Include="Microsoft.Azure.SignalR" Version="1.15.2" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.5.43" />
     <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
   </ItemGroup>
 
