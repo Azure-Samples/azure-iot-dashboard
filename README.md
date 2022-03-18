@@ -24,9 +24,16 @@ dotnet user-secret init
 dotnet user-secret set "Azure:IotHub:ConnectionString" "<Your Azure Iot Hub Connection String>"
 dotnet user-secret set "Azure:CheckpointStorageAccount:ConnectionString" "<Your Azure Storage Account -for checkpointing->"
 dotnet user-secret set "Azure:SignalR:ConnectionString" "<Your Azure SignalR service for event broadcasting>" 
+dotnet user-secret set "Azure:Redis:ConnectionString" "<Your Azure Redis service for online devices broadcasting>" 
 ```
 
 ### Prerequisites
+* Iot Hub Account
+* Storage Account for Checkpointing
+* SignalR Service
+* Azure Redis Cache
+
+Configurations:
 * Iot Hub
 * Message Routes to Built-in endpoint for:
 ![image](https://user-images.githubusercontent.com/2638875/153589025-2acae73e-bfc5-49d8-bd9b-0599ba7dc7fa.png)
