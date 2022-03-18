@@ -13,13 +13,13 @@ namespace Iot.PnpDashboard.Devices
     public class DeviceService : IDeviceService, IAsyncDisposable
     {
         private readonly AppConfiguration _configuration;
-        private readonly IOnlineDevices _onlineDevices;
+        private readonly OnlineDevicesService _onlineDevices;
         private readonly ILogger _logger;
         private readonly RegistryManager _registryManager;
         private readonly DigitalTwinClient _digitalTwinClient;
         private readonly ModelsRepositoryClient _modelsRepositoryClient;
 
-        public DeviceService(AppConfiguration configuration, IOnlineDevices onlineDevices, ILogger<DeviceService> logger)
+        public DeviceService(AppConfiguration configuration, OnlineDevicesService onlineDevices, ILogger<DeviceService> logger)
         {
             
             _configuration = configuration;

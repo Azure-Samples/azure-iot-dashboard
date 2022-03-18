@@ -1,5 +1,6 @@
 ﻿using Iot.PnpDashboard.Configuration;
 using Iot.PnpDashboard.Events;
+using Iot.PnpDashboard.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Management.IotHub.Models;
 using Microsoft.Rest.TransientFaultHandling;
@@ -10,70 +11,63 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace Iot.PnpDashboard.Devices
 {
-    public class OnlineDevicesRedisPubSub : IOnlineDevices
+    public class OnlineDevicesService
     {
         private ConcurrentDictionary<string, Device> _onlineDevices;
-        private readonly AppConfiguration _configuration;
         private readonly ConnectionMultiplexer _cacheConnection;
         private readonly ISubscriber _subscriber;
 
-        public OnlineDevicesRedisPubSub(AppConfiguration configuration)
+        public const string Channel = "OnlineDevices";
+
+        public OnlineDevicesService(RedisConnectionFactory redisConnectionFactory)
         {
             _onlineDevices = new ConcurrentDictionary<string, Device>();
-            _configuration = configuration;
-            _cacheConnection = ConnectionMultiplexer.Connect(_configuration.RedisConnStr);
+            _cacheConnection = redisConnectionFactory.GetConnection();
             _subscriber = _cacheConnection.GetSubscriber();
-            _subscriber.Subscribe("OnlineDevices", async (channel, message) =>
-            {
-                await UpdateAsync(JsonConvert.DeserializeObject<Event>(message));
-            });
+            _subscriber.Subscribe("OnlineDevices", async (channel, message) => await UpdateAsync(channel, message).ConfigureAwait(false));
         }
 
-        public async Task PublishAsync(Event e)
+        public async Task UpdateAsync(RedisChannel channel, RedisValue message)
         {
-            await _subscriber.PublishAsync("OnlineDevices", JsonConvert.SerializeObject(e), CommandFlags.FireAndForget);
-        }
-
-        public async Task UpdateAsync(Event e)
-        {
-            if (e is not null)
+            var iotEvent = JsonConvert.DeserializeObject<Event>(message);
+            if (iotEvent is not null)
             {
-                if (_onlineDevices.ContainsKey(e.DeviceId))
+                if (_onlineDevices.ContainsKey(iotEvent.DeviceId))
                 {
-                    Device toUpdate = _onlineDevices[e.DeviceId];
-                    if (e.ModelId != null)
+                    Device toUpdate = _onlineDevices[iotEvent.DeviceId];
+                    if (iotEvent.ModelId != null)
                     {
-                        toUpdate.ModelId = e.ModelId;
+                        toUpdate.ModelId = iotEvent.ModelId;
                     }
 
-                    if (e.Operation != null)
+                    if (iotEvent.Operation != null)
                     {
-                        toUpdate.OperationSource = e.MessageSource;
-                        toUpdate.LastOperation = e.Operation;
-                        toUpdate.OperationTimestamp = e.EnqueuedTime;
-                        toUpdate.Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected";
+                        toUpdate.OperationSource = iotEvent.MessageSource;
+                        toUpdate.LastOperation = iotEvent.Operation;
+                        toUpdate.OperationTimestamp = iotEvent.EnqueuedTime;
+                        toUpdate.Disconnected = iotEvent.MessageSource == "deviceConnectionStateEvents" && iotEvent.Operation == "deviceDisconnected";
                     }
 
-                    if (e.MessageSource == "Telemetry")
+                    if (iotEvent.MessageSource == "Telemetry")
                     {
-                        toUpdate.TelemetryTimestamp = e.EnqueuedTime;
+                        toUpdate.TelemetryTimestamp = iotEvent.EnqueuedTime;
                         toUpdate.Disconnected = false;
                     }
-                    _onlineDevices[e.DeviceId] = toUpdate;
+                    _onlineDevices[iotEvent.DeviceId] = toUpdate;
                 }
                 else
                 {
                     var device = new Device()
                     {
-                        DeviceId = e.DeviceId,
-                        ModelId = e.ModelId ?? string.Empty,
-                        OperationSource = e.Operation is not null ? e.MessageSource : null,
-                        LastOperation = e.Operation is not null ? e.Operation : null,
-                        TelemetryTimestamp = e.MessageSource == "Telemetry" ? e.EnqueuedTime : null,
-                        OperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null,
-                        Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected"
+                        DeviceId = iotEvent.DeviceId,
+                        ModelId = iotEvent.ModelId ?? string.Empty,
+                        OperationSource = iotEvent.Operation is not null ? iotEvent.MessageSource : null,
+                        LastOperation = iotEvent.Operation is not null ? iotEvent.Operation : null,
+                        TelemetryTimestamp = iotEvent.MessageSource == "Telemetry" ? iotEvent.EnqueuedTime : null,
+                        OperationTimestamp = iotEvent.Operation is not null ? iotEvent.EnqueuedTime : null,
+                        Disconnected = iotEvent.MessageSource == "deviceConnectionStateEvents" && iotEvent.Operation == "deviceDisconnected"
                     };
-                    _onlineDevices.TryAdd(e.DeviceId, device);
+                    _onlineDevices.TryAdd(iotEvent.DeviceId, device);
                 }
             }
             await Task.FromResult(new OkResult());

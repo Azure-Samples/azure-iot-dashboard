@@ -40,7 +40,8 @@ builder.Services.AddSignalR( options=> options.EnableDetailedErrors = true )
     });
 
 builder.Services.AddSingleton<AppConfiguration>();
-builder.Services.AddSingleton<IOnlineDevices, OnlineDevicesRedisPubSub>();
+builder.Services.AddSingleton<RedisConnectionFactory>();
+builder.Services.AddSingleton<OnlineDevicesService>();
 builder.Services.AddSingleton<IDeviceService, DeviceService>();
 builder.Services.AddHostedService<EventHubProcessorService>();
 

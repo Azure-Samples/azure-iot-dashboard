@@ -6,7 +6,8 @@ using Iot.PnpDashboard.Devices;
 using Iot.PnpDashboard.EventBroadcast;
 using Iot.PnpDashboard.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Azure;
+using Newtonsoft.Json;
+using StackExchange.Redis;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 
@@ -18,7 +19,8 @@ namespace Iot.PnpDashboard.Events
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
 
         private readonly AppConfiguration _configuration;
-        private readonly IOnlineDevices _onlineDevices;
+        private readonly ConnectionMultiplexer _cacheConnection;
+        private readonly ISubscriber _onlineDevicesSubscriber;
         private readonly EventProcessorClientFactory _processorFactory;
         private readonly IHubContext<IotEventsHub> _signalR;
         private readonly CancellationTokenSource _cancellationSource;
@@ -32,16 +34,17 @@ namespace Iot.PnpDashboard.Events
         private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
 
         public EventHubProcessorService(AppConfiguration configuration,
-            IOnlineDevices onlineDevices,
+            RedisConnectionFactory redisConnectionFactory,
             IHubContext<IotEventsHub> signalr, 
             IHostApplicationLifetime lifetime, 
             ILogger<EventHubProcessorService> logger)
         {
-            if (onlineDevices is null) throw new ArgumentNullException(nameof(onlineDevices));
             if (signalr is null) throw new ArgumentNullException(nameof(signalr));
 
             _configuration = configuration;
-            _onlineDevices = onlineDevices;
+            var _cacheConnectionFactory = new RedisConnectionFactory(configuration);
+            _cacheConnection = redisConnectionFactory.GetConnection();
+            _onlineDevicesSubscriber = _cacheConnection.GetSubscriber();
             _processorFactory = new EventProcessorClientFactory(_configuration);
             _signalR = signalr;
             _lifetime = lifetime;
@@ -82,9 +85,11 @@ namespace Iot.PnpDashboard.Events
 
                     if (iotEvent.DeviceId is not null)
                     {
-                        //TODO: ENSURE AND VERIFY SIGNALR SERVER SENT ARE NOT COUNT AGAINST MESSAGE QUOTA
+                        //Send the event to the device group
                         await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent).ConfigureAwait(false);
-                        await ((OnlineDevicesRedisPubSub)_onlineDevices).PublishAsync(iotEvent).ConfigureAwait(false); //TODO: FireAndForget
+
+                        //send the event to the online devices channel in redis
+                        await PublisOnlineDeviceEventAsync(iotEvent).ConfigureAwait(false);
                     }
 
                     await UpdateCheckpointAsync(args);
@@ -113,7 +118,6 @@ namespace Iot.PnpDashboard.Events
             }
             return;
         }
-
         private async Task ProcessErrorAsync(ProcessErrorEventArgs args)
         {
             try
@@ -303,6 +307,11 @@ namespace Iot.PnpDashboard.Events
                 await args.UpdateCheckpointAsync();
                 _partitionTracking[partition] = 0;
             }
-        }   
+        }  
+        
+        private async Task PublisOnlineDeviceEventAsync(Event iotEvent)
+        {
+            await _onlineDevicesSubscriber.PublishAsync(OnlineDevicesService.Channel, JsonConvert.SerializeObject(iotEvent)).ConfigureAwait(false);
+        }
     }
 }
