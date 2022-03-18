@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Azure;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -44,6 +45,10 @@ namespace Iot.PnpDashboard
 
         public void OnNext(T value)
         {
+            if (_list.Count >= 250)
+            {
+                Interlocked.Exchange(ref _list, _list.RemoveAt(_list.Count-1));
+            }
             Interlocked.Exchange(ref _list, _list.Insert(0, value));
             _onChange?.Invoke();
         }

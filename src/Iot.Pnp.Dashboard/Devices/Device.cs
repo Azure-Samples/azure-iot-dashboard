@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Devices.Shared;
+using System.Text.Json.Serialization;
 
 namespace Iot.PnpDashboard.Devices
 {
@@ -6,10 +7,11 @@ namespace Iot.PnpDashboard.Devices
     {
         public string DeviceId { get; set; } = string.Empty;
         public string ModelId { get; set; } = string.Empty;
-        public string? MessageSource { get; set; }
-        public DateTimeOffset? LastTelemetryTimestamp { get; set; }
+        public DateTimeOffset? TelemetryTimestamp { get; set; }
         public string? LastOperation { get; set; }
-        public DateTimeOffset? LastOperationTimestamp { get; set; }
+        public DateTimeOffset? OperationTimestamp { get; set; }
+        public string? OperationSource { get; set; }
+        [JsonIgnore]
         public bool? Disconnected { get; set; }
     }
 }

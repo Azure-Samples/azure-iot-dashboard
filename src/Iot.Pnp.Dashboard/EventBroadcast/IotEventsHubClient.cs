@@ -11,19 +11,19 @@ namespace Iot.PnpDashboard.EventBroadcast
         private readonly ILogger _logger;
         private HubConnection? _hubConnection;
         private List<IObserver<Event>> _eventObservers = new List<IObserver<Event>>();
+        private readonly List<string> _currentSubscriptions;
 
         //TODO: Podriamos meter otro cojunto de observers por subtipo de evento???
         //private List<IObserver<Event>> _deviceTwinChangeObservers = new List<IObserver<Event>>();
         //private List<IObserver<Event>> _deviceConnectionStateObservers = new List<IObserver<Event>>();
 
 
-        private string? _currentSubscription;
-        
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
         public IotEventsHubClient(ILogger<IotEventsHubClient> logger, string baseUrl)
         {
             _logger = logger;
+            _currentSubscriptions = new List<string>();
             _hubConnection = new HubConnectionBuilder()
                 .WithUrl(baseUrl.TrimEnd('/') + IotEventsHub.HubUrl)
                 .WithAutomaticReconnect()
@@ -53,41 +53,49 @@ namespace Iot.PnpDashboard.EventBroadcast
         public IDisposable Subscribe(IObserver<Event> observer)
         {
             if (!_eventObservers.Contains(observer))
+            {
                 _eventObservers.Add(observer);
+            }
 
             return new Unsubscriber<Event>(_eventObservers, observer);
         }
 
         public async Task SubscribeTelemetryAsync()
         {
-            await SubscribeTelemetryAsync("all-devices");
+            await SubscribeTelemetryAsync(new string[] { "all-devices" });
         }
-        public async Task SubscribeTelemetryAsync(string id)
+        public async Task SubscribeTelemetryAsync(string[] ids)
         {
             if (_hubConnection is not null)
             {
                 if (!IsConnected)
                 {
                     await _hubConnection.StartAsync();
+                    _hubConnection.On<Event>("DeviceEvent", BroadcastEvent);
                 }
 
-                if (_currentSubscription is not null)
+                if (_currentSubscriptions.Count > 0)
                 {
                     await UnsubscribeAsync();
                 }
 
-                _currentSubscription = id;
-                await _hubConnection.SendAsync("Subscribe", id);
-
-                _hubConnection.On<Event>("DeviceEvent", BroadcastEvent);
+                _currentSubscriptions.AddRange(ids);
+                foreach (var id in _currentSubscriptions)
+                {
+                    await _hubConnection.SendAsync("Subscribe", id);
+                }
             }
         }
 
         private async Task UnsubscribeAsync()
         {
-            if (_hubConnection is not null && IsConnected && _currentSubscription is not null)
+            if (_hubConnection is not null && IsConnected && _currentSubscriptions.Count > 0)
             {
-                await _hubConnection.SendAsync("Unsubscribe", _currentSubscription);
+                foreach (var id in _currentSubscriptions)
+                {
+                    await _hubConnection.SendAsync("Unsubscribe", id);
+                }
+                _currentSubscriptions.Clear();
             }
         }
 

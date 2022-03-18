@@ -81,11 +81,10 @@ namespace Iot.PnpDashboard.Events
 
                     if (iotEvent.DeviceId is not null)
                     {
-                        await _onlineDevices.UpdateAsync(iotEvent);
-
                         //TODO: ENSURE AND VERIFY SIGNALR SERVER SENT ARE NOT COUNT AGAINST MESSAGE QUOTA
                         await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent);
-                        await _signalR.Clients.Groups("all-devices").SendAsync("DeviceEvent", iotEvent);
+
+                        _onlineDevices.UpdateAsync(iotEvent); //TODO: FireAndForget
                     }
 
                     await UpdateCheckpointAsync(args);

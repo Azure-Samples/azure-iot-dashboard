@@ -9,13 +9,15 @@
 @inject NavigationManager NavigationManager
 @inject ILogger<IotEventsHubClient> Logger
 
+
+
 @if (_events is not null)
 {
     <div class="list-stream-container" style="height: 630px">
         <h5>Device Events (web instance '@System.Environment.MachineName')</h5>
         @if (_events.Count > 0)
         {
-            <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear</a>
+            <a href="javascript:void(0);" class="card-link" @onclick="() => _events?.Clear()">Clear @_events.Count</a>
             
             <table class="table">
                 <tr>
@@ -57,7 +59,10 @@
 
 @code {
     [Parameter]
-    public string? DeviceId { get; set; }
+    public List<string>? DeviceIds { get; set; }
+    [Parameter]
+    public string? DeviceId{ get; set; }
+
 
     private IotEventsHubClient? _iotEventsHubClient;
     private ObservableList<Event>? _events;
@@ -69,14 +74,28 @@
         if (SynchronizationContext.Current is not null)
         {
             _iotEventsHubClient = new IotEventsHubClient(Logger, NavigationManager.BaseUri);
-            if(DeviceId is null){
-                await _iotEventsHubClient.SubscribeTelemetryAsync();
+            if (DeviceIds is not null)
+            {
+                await _iotEventsHubClient.SubscribeTelemetryAsync(DeviceIds.ToArray());
             }
-            else{
-                await _iotEventsHubClient.SubscribeTelemetryAsync(DeviceId);
+            else
+            {
+                if(DeviceId is not null)
+                {
+                    await _iotEventsHubClient.SubscribeTelemetryAsync(new string[] { DeviceId });
+                }
             }
 
             _events = new ObservableList<Event>(_iotEventsHubClient.ObserveOn(SynchronizationContext.Current), StateHasChanged);
+        }
+    }
+
+    public async Task UpdateSubscriptionsAsync(List<string> ids)
+    {
+        DeviceIds = ids;
+        if (_iotEventsHubClient is not null)
+        {
+            await _iotEventsHubClient.SubscribeTelemetryAsync(DeviceIds.ToArray());
         }
     }
 

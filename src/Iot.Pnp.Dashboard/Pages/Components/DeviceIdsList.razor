@@ -1,0 +1,72 @@
+﻿@using Iot.PnpDashboard.Devices
+
+@inject IOnlineDevices OnlineDevices
+
+<div>
+<div class="list-stream-container" style="height: 630px" >
+       <label class="font-weight-bold">Online Devices</label>
+ 
+
+        <div class="col-12 row" >   
+            <CheckBoxList Data="@(_deviceIds)"  
+                          TextField="@((item)=>item)"  
+                          ValueField="@((item)=>item)"  
+                          SelectedValues="@_selectedIds"
+                          OnSelectedValuesChange="@SelectedValuesChanged" />  
+        </div>  
+    </div>  
+
+    <div align="left">  
+        <p>
+             Filter: <input type="text" @bind="_nameFilter" /> 
+        </p>
+        <p>
+            <div class="inline-fields">
+             <button class="btn btn-primary" onclick="@(async () => await ApplyFilter())">Filter</button>
+             <button class="btn btn-primary" onclick="@(async () => await LoadMore())">More</button>
+            </div>
+        </p>
+     </div>  
+</div>
+
+@code {
+         
+        [Parameter] public EventCallback<List<string>> OnSelectedIdsChange { get; set; }
+
+        private IEnumerable<string>? _deviceIds = null;
+        private int _pageSize = 50;
+        private int _loadMore = 1;
+        private string? _nameFilter = null;
+        private List<string> _selectedIds = new List<string>();
+
+        private string? _output = null;
+
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+            _deviceIds = await OnlineDevices.GetIdsAsync(_nameFilter, _pageSize, 0);
+
+        } 
+
+        protected async Task LoadMore()  
+        {
+            _loadMore++;
+            _deviceIds = await OnlineDevices.GetIdsAsync(_nameFilter, _pageSize*_loadMore, 0);   
+            StateHasChanged();  
+        }
+        protected async Task ApplyFilter()
+        {
+            if (!String.IsNullOrWhiteSpace(_nameFilter))
+            {
+                _nameFilter = _nameFilter.StartsWith('*') ? _nameFilter?.TrimStart('*') : _nameFilter;
+            }
+            _loadMore = 1;
+            _deviceIds = await OnlineDevices.GetIdsAsync(_nameFilter, _pageSize * _loadMore, 0);
+            StateHasChanged();
+        }  
+
+        private async Task SelectedValuesChanged(List<string> ids)
+        {
+            await OnSelectedIdsChange.InvokeAsync(ids);
+        }
+}

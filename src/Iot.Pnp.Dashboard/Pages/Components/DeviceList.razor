@@ -7,7 +7,7 @@
     @if (_devicesToShow is not null)
     {
         <div>
-            <p>Online Devices: <label>@_onlineDevicesCount</label></p>
+            <p>Online Devices: @_totalDevicesOnline @(String.IsNullOrWhiteSpace(_nameFilter) ? "" : $"| {_devicesToShow.Count} matching DeviceId={_nameFilter}")</p>
             <div class="inline-fields">
                 <p>
                     Showing page <label>@_currentPage</label> of <label>@( _pages )</label>
@@ -37,10 +37,10 @@
                     <tr>
                         <td><a href=/device/@item.DeviceId>@item.DeviceId</a></td>
                         <td>@item.ModelId</td>
-                        <td>@(item.LastOperation is not null ? $"{ item.LastOperation } [{ item.LastOperationTimestamp }]" : "-")</td>
-                        <td>@(item.LastOperation is not null ? item.MessageSource : "-")</td>
-                        <td>@item.LastTelemetryTimestamp</td>
-                        <td>@(!item.Disconnected) @((item.Disconnected.HasValue && !item.Disconnected.Value) && (item.LastTelemetryTimestamp != null && (item.LastTelemetryTimestamp < DateTime.UtcNow.AddMinutes(-5))) ? "?" : "")</td>
+                        <td>@(item.LastOperation is not null ? $"{ item.LastOperation } [{ item.OperationTimestamp }]" : "-")</td>
+                        <td>@(item.OperationSource is not null ? item.OperationSource : "-")</td>
+                        <td>@item.TelemetryTimestamp</td>
+                        <td>@(!item.Disconnected) @((item.Disconnected.HasValue && !item.Disconnected.Value) && (item.TelemetryTimestamp != null && (item.TelemetryTimestamp < DateTime.UtcNow.AddMinutes(-5))) ? "?" : "")</td>
                     </tr>
                 }
             </table>
@@ -59,12 +59,12 @@
 @code {
     Timer? _timer;
     List<Device>? _devicesToShow;
-    private const int DefaultPageSize = 20;
+    private const int DefaultPageSize = 15;
     private string? _nameFilter { get; set; }
     private int _pageSize { get; set; }
     private int _currentPage { get; set; }
     private int _pages { get; set; }
-    private long _onlineDevicesCount;
+    private long _totalDevicesOnline;
     private bool _showLoading = false;
 
 
@@ -73,18 +73,20 @@
         await base.OnInitializedAsync();
         _pageSize = DefaultPageSize;
         _currentPage = 1;
-        _onlineDevicesCount = await DeviceService.OnlineDevicesCountAsync();
-        _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_onlineDevicesCount) / _pageSize)) : DefaultPageSize;
+        _totalDevicesOnline = await DeviceService.OnlineDevicesCountAsync();
+        _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_totalDevicesOnline) / _pageSize)) : DefaultPageSize;
         await RefreshUI();
         _timer = new Timer(async (object? stateInfo) =>
         {
-            await RefreshUI();
-        }, new System.Threading.AutoResetEvent(false), 0, 1000);
+            if (!_showLoading)
+            {
+                await RefreshUI(); 
+            }
+        }, new System.Threading.AutoResetEvent(false), 2000, 1500);
     } 
 
     private async Task ApplyFilter()
     {
-        _showLoading = true;
         if (!String.IsNullOrWhiteSpace(_nameFilter))
         {
             _nameFilter = _nameFilter.StartsWith('*') ? _nameFilter?.TrimStart('*') : _nameFilter;
@@ -96,35 +98,36 @@
         }
 
         await RefreshUI();
-        _showLoading = false;
     }
     private async Task IncrementPage()
     {
         if(_currentPage < _pages)
         {
-            _showLoading = true;
             _currentPage++;
             await RefreshUI();
-            _showLoading = false;
         }
     }
     private async Task DecrementPage()
     {
-    if(_currentPage > 0)
+        if(_currentPage > 1)
         {
-            _showLoading = true;
             _currentPage--;
             await RefreshUI();
-            _showLoading = false;
         }
     }
     private async Task RefreshUI()
     {
         await InvokeAsync(async () =>
         {
+            _showLoading = true;
             _devicesToShow = (await DeviceService.GetOnlineDevicesAsync(_nameFilter, _pageSize, _currentPage-1)).ToList();
-            _onlineDevicesCount = await DeviceService.OnlineDevicesCountAsync();
-            _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_onlineDevicesCount) / _pageSize)) : DefaultPageSize;
+            _totalDevicesOnline = await DeviceService.OnlineDevicesCountAsync();
+            _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_totalDevicesOnline) / _pageSize)) : DefaultPageSize;
+            if(_currentPage > _pages)
+            {
+                _currentPage = _pages;
+            }
+            _showLoading = false;
             StateHasChanged();
         });
     }

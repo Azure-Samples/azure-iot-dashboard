@@ -20,6 +20,7 @@ namespace Iot.PnpDashboard.Configuration
         public string? SignalREndpoint => ManagedIdentityEnabled ? _configuration.GetValueOrThrow<string>("Azure:SignalR:HostName") : SignalRConnStr.Split(';').Where(x => x.Contains("Endpoint")).Select(s => s.Split('=').LastOrDefault()).FirstOrDefault();
         public string RedisConnStr => _configuration.GetValueOrThrow<string>("Azure:Redis:ConnectionString");
         public string? RedisHostName => RedisConnStr.Split(",").FirstOrDefault<string>()?.Split(":").FirstOrDefault();
+        public string? RedisPort => RedisConnStr.Split(",").FirstOrDefault<string>()?.Split(":")[1];
 
         public AppConfiguration(IConfiguration configuration)
         {

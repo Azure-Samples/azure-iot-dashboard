@@ -32,15 +32,15 @@ namespace Iot.PnpDashboard.Devices
 
                     if (e.Operation != null)
                     {
-                        toUpdate.MessageSource = e.MessageSource;
+                        toUpdate.OperationSource = e.MessageSource;
                         toUpdate.LastOperation = e.Operation;
-                        toUpdate.LastOperationTimestamp = e.EnqueuedTime;
+                        toUpdate.OperationTimestamp = e.EnqueuedTime;
                         toUpdate.Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected";
                     }
 
                     if (e.MessageSource == "Telemetry")
                     {
-                        toUpdate.LastTelemetryTimestamp = e.EnqueuedTime;
+                        toUpdate.TelemetryTimestamp = e.EnqueuedTime;
                         toUpdate.Disconnected = false;
                     }
                     _onlineDevices[e.DeviceId] = toUpdate;
@@ -51,10 +51,10 @@ namespace Iot.PnpDashboard.Devices
                     {
                         DeviceId = e.DeviceId,
                         ModelId = e.ModelId ?? string.Empty,
-                        MessageSource = e.Operation is not null ? e.MessageSource : null,
+                        OperationSource = e.Operation is not null ? e.MessageSource : null,
                         LastOperation = e.Operation is not null ? e.Operation : null,
-                        LastTelemetryTimestamp = e.MessageSource == "Telemetry" ? e.EnqueuedTime : null,
-                        LastOperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null,
+                        TelemetryTimestamp = e.MessageSource == "Telemetry" ? e.EnqueuedTime : null,
+                        OperationTimestamp = e.Operation is not null ? e.EnqueuedTime : null,
                         Disconnected = e.MessageSource == "deviceConnectionStateEvents" && e.Operation == "deviceDisconnected"
                     };
                     _onlineDevices.TryAdd(e.DeviceId, device);
@@ -70,6 +70,14 @@ namespace Iot.PnpDashboard.Devices
 
         public Task<long> CountAsync() => Task.FromResult<long>(_onlineDevices.Count);
 
+        public Task<IEnumerable<string>> GetIdsAsync(string? namePattern = null, int pageSize = 100, int page = 0)
+        {
+            return Task.FromResult<IEnumerable<string>>(_onlineDevices.Keys);
+        }
 
+        public Task<Device?> GetDeviceAsync(string id)
+        {
+            return Task.FromResult<Device?>(_onlineDevices.ContainsKey(id) ? _onlineDevices[id] : null);
+        }
     }
 }

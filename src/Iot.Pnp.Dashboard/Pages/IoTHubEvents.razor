@@ -4,37 +4,28 @@
 @using Iot.PnpDashboard.Pages.Components
 @using Iot.PnpDashboard.Events;
 
-@implements IDisposable
-
 <PageTitle>IoT Hub Events</PageTitle>
 
 
 
 <h1>Events from IoT Hub</h1>
 
-<EventList />
+<table class="table">
+    <tr style="vertical-align:top;">
+        <td><DeviceIdsList OnSelectedIdsChange="@SelectedIdsChanged"/></td>
+        <td><EventList @ref="_eventList" /></td>
+    </tr>
+</table>
 
 @code {
-    protected override void OnInitialized()
-    {
-        //if (EventService is INotifyPropertyChanged changed)
-        //{
-        //    changed.PropertyChanged += OnChange;
-        //}
+    EventList? _eventList;
 
-        StateHasChanged();
-    }
-
-    public void Dispose()
+    private async Task SelectedIdsChanged(List<string>? ids)
     {
-        //if (EventService is INotifyPropertyChanged changed)
-        //{
-        //    changed.PropertyChanged -= OnChange;
-        //}
-    }
-
-    private async void OnChange(object? sender, PropertyChangedEventArgs args)
-    {
-        await InvokeAsync(() => StateHasChanged());
+        if (_eventList !=null && ids != null)
+        {
+            await _eventList.UpdateSubscriptionsAsync(ids);
+        }
+        //StateHasChanged();
     }
 }
