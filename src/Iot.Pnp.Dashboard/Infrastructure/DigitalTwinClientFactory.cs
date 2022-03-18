@@ -15,22 +15,7 @@ namespace Iot.PnpDashboard.Infrastructure
 
         public DigitalTwinClient Create()
         {
-            if (_configuration.ManagedIdentityEnabled)
-            {
-                return CreateDigitalTwinClientWithMSI();
-            }
-
             return CreateDigitalTwinClientConnStr();
-        }
-
-        private DigitalTwinClient CreateDigitalTwinClientWithMSI()
-        {
-            DefaultAzureCredentialOptions options = new DefaultAzureCredentialOptions()
-            {
-                ManagedIdentityClientId = _configuration.ManagedIdentityClientId ?? null
-            };
-            var credential = new DefaultAzureCredential(options);
-            return DigitalTwinClient.Create(_configuration.IotHubHostName, credential);
         }
 
         private DigitalTwinClient CreateDigitalTwinClientConnStr()

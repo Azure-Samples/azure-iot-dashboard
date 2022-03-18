@@ -15,10 +15,6 @@
     </tr>
   </thead>
   <tbody>
-     <tr>
-        <td>Managed Identity Enabled</td>
-        <td>@(Config.ManagedIdentityEnabled)</td>
-    </tr>
     <tr>
         <td>Iot Hub Host</td>
         <td>@(Config.IotHubHostName)</td>
@@ -38,6 +34,10 @@
     <tr>
         <td>SignalR Endpoint</td>
         <td>@(Config.SignalREndpoint)</td>
+    </tr>
+    <tr>
+        <td>Redis Host</td>
+        <td>@(Config.RedisHostName):@(Config.RedisPort)</td>
     </tr>
     </tbody>
 </table>
