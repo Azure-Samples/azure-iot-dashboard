@@ -13,5 +13,7 @@ namespace Iot.PnpDashboard.Devices
         public string? OperationSource { get; set; }
         [JsonIgnore]
         public bool? Disconnected { get; set; }
+        public DateTimeOffset TelemetryProcessorOffset { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset TelemetryBroadcastOffset { get; set; } = DateTimeOffset.UtcNow;
     }
 }

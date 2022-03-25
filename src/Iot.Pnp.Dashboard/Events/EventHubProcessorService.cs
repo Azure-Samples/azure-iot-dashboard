@@ -9,17 +9,27 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Net.Sockets;
 
 namespace Iot.PnpDashboard.Events
 {
     public class EventHubProcessorService : BackgroundService
     {
+        struct PartitionTrackingData
+        {
+            public int EventCount;
+            public DateTime LastCheckpoint;
+            public ProcessEventArgs PreviousEventArgs;
+        }
+
         private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
         private readonly TimeSpan _maxWaitTime = TimeSpan.FromSeconds(30);
 
         private readonly AppConfiguration _configuration;
         private readonly ConnectionMultiplexer _cacheConnection;
+        private readonly IDatabaseAsync _onlineDevicesCache;
         private readonly ISubscriber _onlineDevicesSubscriber;
         private readonly EventProcessorClientFactory _processorFactory;
         private readonly IHubContext<IotEventsHub> _signalR;
@@ -31,7 +41,7 @@ namespace Iot.PnpDashboard.Events
 
         private int _consecutiveErrorsHandlingEvents = 0;
         private DateTime _lastEventReceivedTimeStamp = DateTime.MinValue;
-        private ConcurrentDictionary<string, int> _partitionTracking = new ConcurrentDictionary<string, int>();
+        private ConcurrentDictionary<string, PartitionTrackingData> _partitionTracking = new ConcurrentDictionary<string, PartitionTrackingData>();
 
         public EventHubProcessorService(AppConfiguration configuration,
             RedisConnectionFactory redisConnectionFactory,
@@ -45,6 +55,7 @@ namespace Iot.PnpDashboard.Events
             var _cacheConnectionFactory = new RedisConnectionFactory(configuration);
             _cacheConnection = redisConnectionFactory.GetConnection();
             _onlineDevicesSubscriber = _cacheConnection.GetSubscriber();
+            _onlineDevicesCache = _cacheConnection.GetDatabase();
             _processorFactory = new EventProcessorClientFactory(_configuration);
             _signalR = signalr;
             _lifetime = lifetime;
@@ -85,14 +96,13 @@ namespace Iot.PnpDashboard.Events
 
                     if (iotEvent.DeviceId is not null)
                     {
+                        iotEvent.TelemetryProcessorOffset = DateTimeOffset.UtcNow;
                         //Send the event to the device group
                         await _signalR.Clients.Groups(iotEvent.DeviceId).SendAsync("DeviceEvent", iotEvent).ConfigureAwait(false);
 
                         //send the event to the online devices channel in redis
-                        await PublisOnlineDeviceEventAsync(iotEvent).ConfigureAwait(false);
+                        await PublishOnlineDeviceEventAsync(iotEvent).ConfigureAwait(false);
                     }
-
-                    await UpdateCheckpointAsync(args);
                 }
                 else
                 {
@@ -101,6 +111,9 @@ namespace Iot.PnpDashboard.Events
                         _logger.LogInformation($"EventHubProcessorService is alive and waiting for events. Last event received at {_lastEventReceivedTimeStamp.ToString()}.");
                     }
                 }
+
+                await UpdateCheckpointAsync(args).ConfigureAwait(false);
+
                 _consecutiveErrorsHandlingEvents = 0; //We succeedded processing the event, reset the consecutive errors counter.
             }
             catch(Exception ex)
@@ -300,18 +313,37 @@ namespace Iot.PnpDashboard.Events
         private async Task UpdateCheckpointAsync(ProcessEventArgs args)
         {
             string partition = args.Partition.PartitionId;
-            int eventsSinceLastCheckpoint = _partitionTracking.AddOrUpdate(key: partition, addValue: 1, updateValueFactory: (_, currentCount) => currentCount + 1);
-            if (eventsSinceLastCheckpoint >= 50)
+            PartitionTrackingData tracking = _partitionTracking.AddOrUpdate(
+                key: partition, 
+                addValue: new PartitionTrackingData () { EventCount = 1, LastCheckpoint= DateTime.UtcNow, PreviousEventArgs = default }, 
+                updateValueFactory: (id, trackingData) => {
+                    trackingData.EventCount++;
+                    if (args.HasEvent)
+                    {
+                        trackingData.PreviousEventArgs = args;
+                    }
+                return trackingData;
+            });
+
+            //Checkpoint every 50 events or 1 minute processed
+            if (args.HasEvent && (tracking.EventCount >= 50 || DateTime.UtcNow > tracking.LastCheckpoint.AddMinutes(1)))
             {
-                //Update the checkpoint every 50 delivered messages
-                await args.UpdateCheckpointAsync();
-                _partitionTracking[partition] = 0;
+                await args.UpdateCheckpointAsync(_cancellationSource.Token);
+                _partitionTracking[partition] = new PartitionTrackingData() { EventCount = 0, LastCheckpoint = DateTime.UtcNow, PreviousEventArgs = default };
             }
-        }  
-        
-        private async Task PublisOnlineDeviceEventAsync(Event iotEvent)
+            else if(!args.HasEvent && tracking.PreviousEventArgs.HasEvent)
+            {
+                await tracking.PreviousEventArgs.UpdateCheckpointAsync(_cancellationSource.Token);
+                _partitionTracking[partition] = new PartitionTrackingData() { EventCount = 0, LastCheckpoint = DateTime.UtcNow, PreviousEventArgs = default };
+            }
+        }
+
+        private async Task PublishOnlineDeviceEventAsync(Event iotEvent)
         {
-            await _onlineDevicesSubscriber.PublishAsync(OnlineDevicesService.Channel, JsonConvert.SerializeObject(iotEvent)).ConfigureAwait(false);
+            await _onlineDevicesSubscriber.PublishAsync(
+                OnlineDevicesService.OnlineDevicesUpdatesChannel,
+                JsonConvert.SerializeObject(iotEvent), CommandFlags.FireAndForget).ConfigureAwait(false);
+
         }
     }
 }

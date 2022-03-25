@@ -9,15 +9,14 @@ using Microsoft.Azure.SignalR;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
 
-builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<AppConfiguration>();
 builder.Services.AddSignalR( options=> options.EnableDetailedErrors = true )
     .AddAzureSignalR();
 
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+builder.Services.AddSingleton<AppConfiguration>();
 builder.Services.AddSingleton<RedisConnectionFactory>();
 builder.Services.AddSingleton<OnlineDevicesService>();
 builder.Services.AddSingleton<IDeviceService, DeviceService>();

@@ -7,8 +7,7 @@ namespace Iot.PnpDashboard.Devices
 {
     public interface IDeviceService : IAsyncDisposable
     {
-        Task<IEnumerable<Device>> GetOnlineDevicesAsync(string? namePattern = default, int pageSize = 100, int pageOffset = 0);
-        Task<long> OnlineDevicesCountAsync();
+        OnlineDevicesService OnlineDevices { get; }
         Task<Twin?> GetDeviceTwinAsync(string? deviceId);
         Task<BasicDigitalTwin?> GetDigitalTwinAsync(string? deviceId);
         Task<ModelResult?> ResolveModelAsync(string? modelId); 

@@ -28,7 +28,7 @@
                     <th scope="col">Model Id</th>
                     <th scope="col">Last Operation</th>
                     <th scope="col">Op. Source</th>
-                    <th scope="col">Last Telemetry</th>
+                    <th scope="col">Last Telemetry [+Processing | +Broadcast]</th>
                     <th scope="col">Connected</th>
                 </tr>
 
@@ -37,9 +37,9 @@
                     <tr>
                         <td><a href=/device/@item.DeviceId>@item.DeviceId</a></td>
                         <td>@item.ModelId</td>
-                        <td>@(item.LastOperation is not null ? $"{ item.LastOperation } [{ item.OperationTimestamp }]" : "-")</td>
+                        <td>@(item.LastOperation is not null ? $"{ item.LastOperation } [{ item.OperationTimestamp.ToString() }]" : "-")</td>
                         <td>@(item.OperationSource is not null ? item.OperationSource : "-")</td>
-                        <td>@item.TelemetryTimestamp</td>
+                        <td>@item.TelemetryTimestamp [@((item.TelemetryTimestamp is not null ? $"{(item.TelemetryProcessorOffset - item.TelemetryTimestamp.Value).TotalSeconds.ToString("F3")} | {(item.TelemetryBroadcastOffset - item.TelemetryProcessorOffset).TotalSeconds.ToString("F3")}" : "-"))]</td>
                         <td>@(!item.Disconnected) @((item.Disconnected.HasValue && !item.Disconnected.Value) && (item.TelemetryTimestamp != null && (item.TelemetryTimestamp < DateTime.UtcNow.AddMinutes(-5))) ? "?" : "")</td>
                     </tr>
                 }
@@ -73,7 +73,7 @@
         await base.OnInitializedAsync();
         _pageSize = DefaultPageSize;
         _currentPage = 1;
-        _totalDevicesOnline = await DeviceService.OnlineDevicesCountAsync();
+        _totalDevicesOnline = DeviceService.OnlineDevices.Count;
         _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_totalDevicesOnline) / _pageSize)) : DefaultPageSize;
         await RefreshUI();
         _timer = new Timer(async (object? stateInfo) =>
@@ -82,7 +82,7 @@
             {
                 await RefreshUI(); 
             }
-        }, new System.Threading.AutoResetEvent(false), 2000, 1500);
+        }, new System.Threading.AutoResetEvent(false), 1000, 1000);
     } 
 
     private async Task ApplyFilter()
@@ -120,13 +120,18 @@
         await InvokeAsync(async () =>
         {
             _showLoading = true;
-            _devicesToShow = (await DeviceService.GetOnlineDevicesAsync(_nameFilter, _pageSize, _currentPage-1)).ToList();
-            _totalDevicesOnline = await DeviceService.OnlineDevicesCountAsync();
+            _devicesToShow = DeviceService.OnlineDevices.Get(_nameFilter, _pageSize, _currentPage-1);
+            _totalDevicesOnline = DeviceService.OnlineDevices.Count;
             _pages = _pageSize > 0 ? Convert.ToInt32(Math.Ceiling(Convert.ToDouble(_totalDevicesOnline) / _pageSize)) : DefaultPageSize;
             if(_currentPage > _pages)
             {
                 _currentPage = _pages;
             }
+            if(_currentPage == 0)
+            {
+                _currentPage = 1;
+            }
+            
             _showLoading = false;
             StateHasChanged();
         });

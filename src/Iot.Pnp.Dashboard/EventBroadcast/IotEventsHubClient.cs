@@ -13,11 +13,6 @@ namespace Iot.PnpDashboard.EventBroadcast
         private List<IObserver<Event>> _eventObservers = new List<IObserver<Event>>();
         private readonly List<string> _currentSubscriptions;
 
-        //TODO: Podriamos meter otro cojunto de observers por subtipo de evento???
-        //private List<IObserver<Event>> _deviceTwinChangeObservers = new List<IObserver<Event>>();
-        //private List<IObserver<Event>> _deviceConnectionStateObservers = new List<IObserver<Event>>();
-
-
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
         public IotEventsHubClient(ILogger<IotEventsHubClient> logger, string baseUrl)
