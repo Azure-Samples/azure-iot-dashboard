@@ -35,11 +35,7 @@ namespace Iot.PnpDashboard.Devices
             _digitalTwinClient = digitalTwinClientFactory.Create();
         }
 
-        public async Task<IEnumerable<Device>> GetOnlineDevicesAsync(string? namePattern = default, int pageSize = 100, int pageOffset = 0)
-            => await _onlineDevices.GetAsync(namePattern, pageSize, pageOffset);
-        
-        public async Task<long> OnlineDevicesCountAsync()
-            => await _onlineDevices.CountAsync();
+        public OnlineDevicesService OnlineDevices => _onlineDevices;
 
         public async Task<Twin?> GetDeviceTwinAsync(string? deviceId)
         {

@@ -44,15 +44,15 @@
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
-            _deviceIds = await OnlineDevices.GetIdsAsync(_nameFilter, _pageSize, 0);
+            _deviceIds = OnlineDevices.GetIds(_nameFilter, _pageSize, 0);
 
         } 
 
         protected async Task LoadMore()  
         {
             _loadMore++;
-            _deviceIds = await OnlineDevices.GetIdsAsync(_nameFilter, _pageSize*_loadMore, 0);   
-            StateHasChanged();  
+            _deviceIds = OnlineDevices.GetIds(_nameFilter, _pageSize*_loadMore, 0);   
+            await InvokeAsync(() => StateHasChanged());  
         }
         protected async Task ApplyFilter()
         {
@@ -61,8 +61,8 @@
                 _nameFilter = _nameFilter.StartsWith('*') ? _nameFilter?.TrimStart('*') : _nameFilter;
             }
             _loadMore = 1;
-            _deviceIds = await OnlineDevices.GetIdsAsync(_nameFilter, _pageSize * _loadMore, 0);
-            StateHasChanged();
+            _deviceIds = OnlineDevices.GetIds(_nameFilter, _pageSize * _loadMore, 0);
+            await InvokeAsync(() => StateHasChanged()); 
         }  
 
         private async Task SelectedValuesChanged(List<string> ids)

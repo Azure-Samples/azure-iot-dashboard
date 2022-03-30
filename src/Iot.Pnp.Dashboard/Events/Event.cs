@@ -14,6 +14,7 @@ namespace Iot.PnpDashboard.Events
         public string? Component { get; set; } = null;
         public long? SequenceNumber { get; set; } = null;
         public long? Offset { get; set; } = null;
+        public DateTimeOffset TelemetryProcessorOffset { get; set; } = DateTimeOffset.UtcNow;
 
         //public string? HubName { get; set; } = null; TODO: Interesting to have??
 
