@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31825.309
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Iot.PnpDashboard", "Iot.Pnp.Dashboard\Iot.PnpDashboard.csproj", "{84028374-418F-4601-96CE-671106FAB026}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Iot.PnpDashboard.Tests", "Iot.PnpDashboard.Tests\Iot.PnpDashboard.Tests.csproj", "{9F04BECB-1C4B-4627-9D05-186DC3EC2FCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{84028374-418F-4601-96CE-671106FAB026}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84028374-418F-4601-96CE-671106FAB026}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84028374-418F-4601-96CE-671106FAB026}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F04BECB-1C4B-4627-9D05-186DC3EC2FCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F04BECB-1C4B-4627-9D05-186DC3EC2FCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F04BECB-1C4B-4627-9D05-186DC3EC2FCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F04BECB-1C4B-4627-9D05-186DC3EC2FCF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

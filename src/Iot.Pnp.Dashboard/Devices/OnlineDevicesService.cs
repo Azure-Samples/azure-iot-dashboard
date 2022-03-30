@@ -25,7 +25,7 @@ namespace Iot.PnpDashboard.Devices
         private ImmutableDictionary<string, Device> _stopSendingDevices;
         private ImmutableDictionary<string, Device> _disconnectedDevices;
 
-        private const int CleanUpThresholdMinutes = 5;
+        private const int CleanUpThresholdMinutes = 30;
 
         public const string OnlineDevicesUpdatesChannel = "OnlineDevices";
 
@@ -42,7 +42,7 @@ namespace Iot.PnpDashboard.Devices
         private void SubscribeOnlineDevices()
         {
             _subscriber = _cacheConnection.GetSubscriber();
-            _subscriber.Subscribe("OnlineDevices", async (channel, message) => await UpdateOnlineDevicesAsync(channel, message).ConfigureAwait(false));
+            _subscriber.Subscribe("OnlineDevices", async (channel, message) => await Task.Factory.StartNew(() => UpdateOnlineDevices(channel, message)));
         }
         private Timer SetupCleanupTimer()
         {
@@ -79,26 +79,32 @@ namespace Iot.PnpDashboard.Devices
 
         private void CleanUpDevices()
         {
-            //TODO: Review Cleanup as this does not look too performant
-            //All devices not sending data 5 mins ago, are moved to "disconected" and removed from "online"
+            //TODO: Review for chances on make it more performant
+            //All devices not sending data 30 mins ago, are moved to "disconected" and removed from "online"
+
+            var _prevOnlineDevices = Interlocked.Exchange(ref _onlineDevices, new ConcurrentDictionary<string, Device>(
+                _onlineDevices.Where(d => d.Value.TelemetryTimestamp > DateTime.UtcNow.AddMinutes(-CleanUpThresholdMinutes))));
+
             Interlocked.Exchange(ref _stopSendingDevices,
-                _onlineDevices.Where(d => !d.Value.Disconnected.Value && d.Value.TelemetryTimestamp <= DateTime.UtcNow.AddMinutes(-CleanUpThresholdMinutes)).ToImmutableDictionary<string, Device>());
-
-            Interlocked.Exchange(ref _disconnectedDevices,
-                _onlineDevices.Where(d => d.Value.Disconnected.Value).ToImmutableDictionary<string, Device>());
-
-            var test = _onlineDevices.Where(d => !d.Value.Disconnected.Value && d.Value.TelemetryTimestamp > DateTime.UtcNow.AddMinutes(-CleanUpThresholdMinutes)).ToImmutableDictionary<string, Device>();
-
-            Interlocked.Exchange(ref _onlineDevices, new ConcurrentDictionary<string, Device>(
-                _onlineDevices.Where(d => !d.Value.Disconnected.Value && d.Value.TelemetryTimestamp > DateTime.UtcNow.AddMinutes(-CleanUpThresholdMinutes))));
+                _prevOnlineDevices.Where(d => d.Value.TelemetryTimestamp <= DateTime.UtcNow.AddMinutes(-CleanUpThresholdMinutes)).ToImmutableDictionary<string, Device>());
         }
 
-        private async Task UpdateOnlineDevicesAsync(RedisChannel channel, RedisValue message)
+        private void UpdateOnlineDevices(RedisChannel channel, RedisValue message)
         {
             var iotEvent = JsonConvert.DeserializeObject<Event>(message);
             if (iotEvent is not null)
             {
-                _onlineDevices.AddOrUpdate(
+                if (iotEvent.MessageSource == "deviceConnectionStateEvents" && iotEvent.Operation == "deviceDisconnected")
+                {
+                    Device? disconnectedDevice;
+                    if (_onlineDevices.TryRemove(iotEvent.DeviceId, out disconnectedDevice))
+                    {
+                        Interlocked.Exchange(ref _disconnectedDevices, _disconnectedDevices.Add(disconnectedDevice.DeviceId, disconnectedDevice));
+                    }
+                }
+                else
+                {
+                    _onlineDevices.AddOrUpdate(
                     key: iotEvent.DeviceId,
                     addValue: new Device()
                     {
@@ -107,7 +113,7 @@ namespace Iot.PnpDashboard.Devices
                         OperationSource = iotEvent.Operation is not null ? iotEvent.MessageSource : null,
                         LastOperation = iotEvent.Operation is not null ? iotEvent.Operation : null,
                         TelemetryTimestamp = iotEvent.MessageSource == "Telemetry" ? iotEvent.EnqueuedTime : null,
-                        TelemetryProcessorOffset = iotEvent.TelemetryProcessorOffset, 
+                        TelemetryProcessorOffset = iotEvent.TelemetryProcessorOffset,
                         TelemetryBroadcastOffset = DateTimeOffset.UtcNow,
                         OperationTimestamp = iotEvent.Operation is not null ? iotEvent.EnqueuedTime : null,
                         Disconnected = iotEvent.MessageSource == "deviceConnectionStateEvents" && iotEvent.Operation == "deviceDisconnected"
@@ -134,11 +140,11 @@ namespace Iot.PnpDashboard.Devices
                             toUpdate.TelemetryBroadcastOffset = DateTimeOffset.UtcNow;
                             toUpdate.Disconnected = false;
                         }
-                       
+
                         return toUpdate;
                     });
+                }
             }
-            await Task.FromResult(new OkResult());
         }
     }
 }

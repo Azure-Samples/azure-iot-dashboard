@@ -97,6 +97,8 @@
             _pageSize = DefaultPageSize;
         }
 
+        _currentPage = 1;
+
         await RefreshUI();
     }
     private async Task IncrementPage()
