@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Iot.PnpDashboard.Devices.Dtdl
 {
+    [JsonConverter(typeof(ContentsConverter))]
     public class Contents
     {
         public List<Telemetry> Telemetry { get; set; }
@@ -91,14 +92,12 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         {
             List<object> elements = new List<object>();
             elements.AddRange(value.Telemetry);
-            elements.AddRange(value.Properties);    
+            elements.AddRange(value.Properties);
             elements.AddRange(value.Components);
             elements.AddRange(value.Relationships);
             elements.AddRange(value.Commands);
             JsonSerializer.Serialize<List<object>>(elements, options);
         }
-
-        public static readonly ContentsConverter Singleton = new ContentsConverter();
     }
 
 }

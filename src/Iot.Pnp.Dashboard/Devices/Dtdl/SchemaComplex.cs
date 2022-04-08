@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 namespace Iot.PnpDashboard.Devices.Dtdl
 { 
     
+    [JsonConverter(typeof(SchemaComplexConverter))]
     public struct SchemaComplex
     {
         public SchemaComplexArray? Array { get; set; } = null;
@@ -104,7 +105,5 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             }
             throw new JsonException("Cannot marshal type SchemaComplex");
         }
-
-        public static readonly SchemaComplexConverter Singleton = new SchemaComplexConverter();
     }
 }

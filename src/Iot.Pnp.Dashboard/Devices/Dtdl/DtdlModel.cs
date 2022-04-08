@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Iot.PnpDashboard.Devices.Dtdl
 {
+    [JsonConverter(typeof(DtdlModelConverter))]
     public class DtdlModel
     {
         public List<Interface> Interfaces { get; set; }
@@ -37,13 +38,13 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             {
                 if (value.Interfaces.Count == 1)
                 {
-                    JsonSerializer.Serialize<Interface>(value.Interfaces[0], options);
+                    JsonSerializer.Serialize<Interface>(writer, value.Interfaces[0], options);
                     return;
                 }
 
                 if (value.Interfaces.Count > 1)
                 {
-                    JsonSerializer.Serialize<List<Interface>>(value.Interfaces, options);
+                    JsonSerializer.Serialize<List<Interface>>(writer, value.Interfaces, options);
                     return;
                 }
             }
@@ -51,6 +52,5 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             throw new JsonException("Cannot marshal type DtdModel. Intefaces is null or empty.");
 
         }
-        public static readonly DtdlModelConverter Singleton = new DtdlModelConverter();
     }
 }

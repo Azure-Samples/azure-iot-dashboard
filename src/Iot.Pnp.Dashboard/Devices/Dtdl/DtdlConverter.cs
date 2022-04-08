@@ -12,11 +12,6 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             PropertyNameCaseInsensitive = true,
             Converters =
             {
-                SchemaConverter.Singleton,
-                SchemaComplexConverter.Singleton,
-                DtdlSemanticTypeConverter.Singleton,
-                ContentsConverter.Singleton,
-                DtdlModelConverter.Singleton,
                 new JsonStringEnumConverter()
             },
         };

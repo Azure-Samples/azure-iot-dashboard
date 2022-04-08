@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace Iot.PnpDashboard.Devices.Dtdl
 {
+    [JsonConverter(typeof(DtdlSemanticTypeConverter))]
     public class DtdlSemanticType
     {
         public DtdlTypeEnum TypeName { get; set; }
@@ -63,7 +64,5 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             }
             throw new JsonException("Cannot marshal type Type");
         }
-
-        public static readonly DtdlSemanticTypeConverter Singleton = new DtdlSemanticTypeConverter();
     }
 }

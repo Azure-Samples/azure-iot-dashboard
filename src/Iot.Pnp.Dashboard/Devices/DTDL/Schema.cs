@@ -5,6 +5,7 @@ using System.Xml.Schema;
 
 namespace Iot.PnpDashboard.Devices.Dtdl
 {
+    [JsonConverter(typeof(SchemaConverter))]
     public struct Schema
     {
         public SchemaPrimitive? Primitive { get; set; } = null;
@@ -61,21 +62,20 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             throw new JsonException("Cannot unmarshal type Schema");
         }
 
+        //TODO: Repasar Write para ver que usan el write...
         public override void Write(Utf8JsonWriter writer, Schema value, JsonSerializerOptions options)
         {
             if (value.Primitive != null)
             {
-                JsonSerializer.Serialize(writer, value.Primitive.Value);
+                JsonSerializer.Serialize(writer, value.Primitive.Value, options);
                 return;
             }
             if (value.Complex != null)
             {
-                JsonSerializer.Serialize(writer, value.Complex);
+                JsonSerializer.Serialize(writer, value.Complex, options);
                 return;
             }
             throw new JsonException("Cannot marshal type Schema");
         }
-
-        public static readonly SchemaConverter Singleton = new SchemaConverter();
     }
 }
