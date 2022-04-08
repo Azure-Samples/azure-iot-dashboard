@@ -3,31 +3,16 @@ using System.Text.Json.Serialization;
 
 namespace Iot.PnpDashboard.Devices.Dtdl
 {
-    public class Telemetry 
+    public class Telemetry : DtdlBase
     {
         [JsonPropertyName("@type")]
-        public DtdlType Type { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public DtdlSemanticType Type { get; set; }
 
         [JsonPropertyName("schema")]
         public Schema Schema { get; set; }
 
-        [JsonPropertyName("@id")]
-        public string? Id { get; set; }
-
-        [JsonPropertyName("comment")]
-        public string? Comment { get; set; }
-
-        [JsonPropertyName("description")]
-        public string? Description { get; set; }
-
-        [JsonPropertyName("displayName")]
-        public string? DisplayName { get; set; }
-
         [JsonPropertyName("unit")]
-        public string Unit { get; set; }
+        public string? Unit { get; set; }
     }
 
     public enum DtdlTypeEnum
@@ -45,19 +30,19 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         Map,
         Object
     }
-    public class DtdlType
+    public class DtdlSemanticType
     {
         public DtdlTypeEnum Content { get; set; }
         public string? SemanticType { get; set; } = null;
 
-        public static implicit operator DtdlType(DtdlTypeEnum contentType) => new DtdlType() { Content = contentType };
+        public static implicit operator DtdlSemanticType(DtdlTypeEnum contentType) => new DtdlSemanticType() { Content = contentType };
     }
 
-    internal class DtdlTypeConverter : JsonConverter<DtdlType>
+    internal class DtdlSemanticTypeConverter : JsonConverter<DtdlSemanticType>
     {
-        public override bool CanConvert(Type t) => t == typeof(DtdlType);
+        public override bool CanConvert(Type t) => t == typeof(DtdlSemanticType);
 
-        public override DtdlType Read(ref Utf8JsonReader reader, Type t, JsonSerializerOptions options)
+        public override DtdlSemanticType Read(ref Utf8JsonReader reader, Type t, JsonSerializerOptions options)
         {
             Utf8JsonReader cloneReader = reader;
             string contentType = String.Empty;
@@ -80,7 +65,7 @@ namespace Iot.PnpDashboard.Devices.Dtdl
 
             if (Enum.TryParse<DtdlTypeEnum>(contentType, true, out var dtdlContentType))
             {
-                return new DtdlType() { Content = dtdlContentType, SemanticType = semanticType };
+                return new DtdlSemanticType() { Content = dtdlContentType, SemanticType = semanticType };
                 
             }
             else
@@ -91,7 +76,7 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             throw new JsonException("Cannot unmarshal type Type");
         }
 
-        public override void Write(Utf8JsonWriter writer, DtdlType value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, DtdlSemanticType value, JsonSerializerOptions options)
         {
             if (value.SemanticType == null)
             {
@@ -106,6 +91,6 @@ namespace Iot.PnpDashboard.Devices.Dtdl
             throw new JsonException("Cannot marshal type Type");
         }
 
-        public static readonly DtdlTypeConverter Singleton = new DtdlTypeConverter();
+        public static readonly DtdlSemanticTypeConverter Singleton = new DtdlSemanticTypeConverter();
     }
 }
