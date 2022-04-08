@@ -71,7 +71,7 @@ namespace Iot.PnpDashboard.Tests
             Assert.IsFalse(deserialized.MinMultiplicity.HasValue);
             Assert.IsFalse(deserialized.MaxMultiplicity.HasValue);
             Assert.AreEqual(deserialized.Properties.Count, 1);
-            Assert.AreEqual(deserialized.Properties[0].Type.Content, DtdlTypeEnum.Property);
+            Assert.AreEqual(deserialized.Properties[0].Type.TypeName, DtdlTypeEnum.Property);
             Assert.AreEqual(deserialized.Properties[0].Schema, SchemaPrimitive.DateTime);
             Assert.IsNull(deserialized.Properties[0].Type.SemanticType);
 

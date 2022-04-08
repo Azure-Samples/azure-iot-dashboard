@@ -15,6 +15,8 @@ namespace Iot.PnpDashboard.Devices.Dtdl
                 SchemaConverter.Singleton,
                 SchemaComplexConverter.Singleton,
                 DtdlSemanticTypeConverter.Singleton,
+                ContentsConverter.Singleton,
+                DtdlModelConverter.Singleton,
                 new JsonStringEnumConverter()
             },
         };

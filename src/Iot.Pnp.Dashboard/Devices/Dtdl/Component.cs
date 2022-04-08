@@ -8,6 +8,6 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         public DtdlTypeEnum Type { get; set; }
 
         [JsonPropertyName("schema")]
-        public string SchemaId { get; set; }
+        public Schema Schema{ get; set; }
     }
 }

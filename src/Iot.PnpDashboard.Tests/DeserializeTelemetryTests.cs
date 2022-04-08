@@ -18,7 +18,7 @@ namespace Iot.PnpDashboard.Tests
             var deserialized = JsonSerializer.Deserialize<Telemetry>(json, DtdlConverter.Options);
 
             Assert.AreEqual(deserialized.Name, "temp");
-            Assert.AreEqual(deserialized.Type.Content, DtdlTypeEnum.Telemetry);
+            Assert.AreEqual(deserialized.Type.TypeName, DtdlTypeEnum.Telemetry);
             Assert.IsNull(deserialized.Type.SemanticType);
             Assert.IsNull(deserialized.Id);
             Assert.IsNull(deserialized.Unit);
@@ -39,7 +39,7 @@ namespace Iot.PnpDashboard.Tests
             var deserialized = JsonSerializer.Deserialize<Telemetry>(json, DtdlConverter.Options);
 
             Assert.AreEqual(deserialized.Name, "ledState");
-            Assert.AreEqual(deserialized.Type.Content, DtdlTypeEnum.Telemetry);
+            Assert.AreEqual(deserialized.Type.TypeName, DtdlTypeEnum.Telemetry);
             Assert.IsNull(deserialized.Type.SemanticType);
             Assert.IsNull(deserialized.Id);
             Assert.IsNull(deserialized.Unit);
@@ -60,7 +60,7 @@ namespace Iot.PnpDashboard.Tests
             var deserialized = JsonSerializer.Deserialize<Telemetry>(json, DtdlConverter.Options);
 
             Assert.AreEqual(deserialized.Name, "temp");
-            Assert.AreEqual(deserialized.Type.Content, DtdlTypeEnum.Telemetry);
+            Assert.AreEqual(deserialized.Type.TypeName, DtdlTypeEnum.Telemetry);
             Assert.IsNotNull(deserialized.Type.SemanticType);
             Assert.AreEqual(deserialized.Type.SemanticType, "Temperature");
             Assert.IsNull(deserialized.Id);

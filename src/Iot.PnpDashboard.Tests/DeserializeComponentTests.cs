@@ -23,7 +23,7 @@ namespace Iot.PnpDashboard.Tests
             Assert.IsNull(deserialized.Description);
             Assert.IsNull(deserialized.Comment);
             Assert.IsNull(deserialized.DisplayName);
-            Assert.AreEqual(deserialized.SchemaId, "dtmi:com:example:Camera;1");
+            Assert.AreEqual(deserialized.Schema.ReferenceId, "dtmi:com:example:Camera;1");
         }
     }
 }
