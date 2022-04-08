@@ -21,9 +21,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Name, "floor");
             Assert.AreEqual(deserialized.Type, DtdlTypeEnum.Relationship);
             Assert.IsNull(deserialized.Id);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsNull(deserialized.Properties);
             Assert.AreEqual(deserialized.Target, "dtmi:com:example:Floor;1");
             Assert.AreEqual(deserialized.MinMultiplicity, 0);
@@ -41,9 +41,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Name, "children");
             Assert.AreEqual(deserialized.Type, DtdlTypeEnum.Relationship);
             Assert.IsNull(deserialized.Id);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsNull(deserialized.Properties);
             Assert.IsNull(deserialized.Target);
             Assert.IsFalse(deserialized.MinMultiplicity.HasValue);
@@ -62,9 +62,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Name, "cleanedBy");
             Assert.AreEqual(deserialized.Type, DtdlTypeEnum.Relationship);
             Assert.IsNull(deserialized.Id);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsNotNull(deserialized.Properties);
             Assert.IsNotNull(deserialized.Target);
             Assert.AreEqual(deserialized.Target, "dtmi:com:example:Cleaner;1");

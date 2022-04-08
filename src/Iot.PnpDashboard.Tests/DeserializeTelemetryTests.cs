@@ -22,9 +22,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.IsNull(deserialized.Type.SemanticType);
             Assert.IsNull(deserialized.Id);
             Assert.IsNull(deserialized.Unit);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsTrue(deserialized.Schema.IsPrimitive);
             Assert.IsFalse(deserialized.Schema.IsComplex);
             Assert.AreEqual(deserialized.Schema.Primitive, SchemaPrimitive.Double);
@@ -43,9 +43,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.IsNull(deserialized.Type.SemanticType);
             Assert.IsNull(deserialized.Id);
             Assert.IsNull(deserialized.Unit);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsNotNull(deserialized.Schema.Complex);
             Assert.IsFalse(deserialized.Schema.IsPrimitive);
             Assert.IsTrue(deserialized.Schema.IsComplex);
@@ -66,9 +66,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.IsNull(deserialized.Id);
             Assert.IsNotNull(deserialized.Unit);
             Assert.AreEqual(deserialized.Unit, "degreeCelsius");
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsNull(deserialized.Schema.Complex);
             Assert.IsTrue(deserialized.Schema.IsPrimitive);
             Assert.IsFalse(deserialized.Schema.IsComplex);

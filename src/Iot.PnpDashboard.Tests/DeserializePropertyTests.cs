@@ -21,9 +21,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Type.TypeName, DtdlTypeEnum.Property);
             Assert.IsNull(deserialized.Id);
             Assert.IsNull(deserialized.Unit);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsNotNull(deserialized.Schema.Complex);
             Assert.IsFalse(deserialized.Schema.IsPrimitive);
             Assert.IsTrue(deserialized.Schema.IsComplex);
@@ -42,9 +42,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Type.TypeName, DtdlTypeEnum.Property);
             Assert.IsNull(deserialized.Id);
             Assert.IsNull(deserialized.Unit);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsTrue(deserialized.Schema.IsPrimitive);
             Assert.IsNull(deserialized.Schema.Complex);
             Assert.IsFalse(deserialized.Schema.IsComplex);
@@ -64,9 +64,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Type.SemanticType, "Temperature");
             Assert.IsNull(deserialized.Id);
             Assert.AreEqual(deserialized.Unit, "degreeCelsius");
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsTrue(deserialized.Schema.IsPrimitive);
             Assert.IsNull(deserialized.Schema.Complex);
             Assert.IsFalse(deserialized.Schema.IsComplex);
@@ -84,9 +84,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Name, "address");
             Assert.AreEqual(deserialized.Type.TypeName, DtdlTypeEnum.Property);
             Assert.IsNull(deserialized.Id);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.IsTrue(deserialized.Schema.IsComplex);
             Assert.IsTrue(deserialized.Schema.Complex.Value.IsObject);
             Assert.AreEqual(deserialized.Schema.Complex.Value.Object.Fields.Count, 4);

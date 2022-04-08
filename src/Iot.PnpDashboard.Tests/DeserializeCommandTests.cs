@@ -20,9 +20,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Name, "reboot");
             Assert.AreEqual(deserialized.Type, DtdlTypeEnum.Command);
             Assert.IsNull(deserialized.Id);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.AreEqual(deserialized.Request.Name, "rebootTime");
             Assert.AreEqual(deserialized.Request.DisplayName, "Reboot Time");
             Assert.AreEqual(deserialized.Request.Description, "Requested time to reboot the device.");

@@ -12,20 +12,21 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         public DtdlTypeEnum Type { get; set; }
 
         [JsonPropertyName("@context")]
-        public string Context { get; set; }
+        [JsonConverter(typeof(SingleStringOrListOfStringConverter))]
+        public List<string> Context { get; set; }
 
         [JsonPropertyName("contents")]
         public Contents? Contents { get; set; }
 
         [JsonPropertyName("extends")]
-        [JsonConverter(typeof(ExtendsConverter))]
+        [JsonConverter(typeof(SingleStringOrListOfStringConverter))]
         public List<string>? Extends { get; set; }
 
         [JsonPropertyName("schemas")]
         public List<Schema>? Schemas { get; set; }
     }
 
-    internal class ExtendsConverter : JsonConverter<List<String>>
+    internal class SingleStringOrListOfStringConverter : JsonConverter<List<String>>
     {
         public override bool CanConvert(Type t) => t == typeof(List<String>);
 

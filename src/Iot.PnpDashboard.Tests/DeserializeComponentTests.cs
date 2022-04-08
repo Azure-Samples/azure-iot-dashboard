@@ -20,9 +20,9 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Name, "frontCamera");
             Assert.AreEqual(deserialized.Type, DtdlTypeEnum.Component);
             Assert.IsNull(deserialized.Id);
-            Assert.IsNull(deserialized.Description);
+            Assert.IsNull(deserialized.LocalizableDescription);
             Assert.IsNull(deserialized.Comment);
-            Assert.IsNull(deserialized.DisplayName);
+            Assert.IsNull(deserialized.LocalizableDisplayName);
             Assert.AreEqual(deserialized.Schema.ReferenceId, "dtmi:com:example:Camera;1");
         }
     }
