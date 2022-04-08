@@ -2,8 +2,10 @@
 
 namespace Iot.PnpDashboard.Devices.Dtdl
 {
-    public enum PrimitiveSchemaEnum
+
+    public enum SchemaPrimitive
     {
+        //Primitive
         [JsonPropertyName("boolean")]
         Boolean,
         [JsonPropertyName("date")]
@@ -23,10 +25,24 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         [JsonPropertyName("string")]
         String,
         [JsonPropertyName("time")]
-        Time
+        Time,
     }
-    public class PrimitiveSchema : Schema
-    {
-        public PrimitiveSchemaEnum Value; 
+
+    public enum SchemaGeoSpatial 
+    { 
+        //GeoSpatial
+        [JsonPropertyName("point")]
+        Point,
+        [JsonPropertyName("multiPoint")]
+        MultiPoint,
+        [JsonPropertyName("lineString")]
+        LineString,
+        [JsonPropertyName("multiLineString")]
+        MultiLineString,
+        [JsonPropertyName("polygon")]
+        Polygon,
+        [JsonPropertyName("multiPolygon")]
+        MultiPolygon
+
     }
 }

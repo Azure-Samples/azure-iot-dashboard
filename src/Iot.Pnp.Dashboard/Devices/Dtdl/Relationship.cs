@@ -1,6 +1,6 @@
 ﻿namespace Iot.PnpDashboard.Devices.Dtdl
 {
-    public class ComplexSchema : Schema
+    internal class Relationship
     {
     }
 }
