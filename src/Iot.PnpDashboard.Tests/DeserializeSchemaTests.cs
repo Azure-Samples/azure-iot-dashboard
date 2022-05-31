@@ -119,6 +119,24 @@ namespace Iot.PnpDashboard.Tests
             Assert.AreEqual(deserialized.Schema.Complex?.Enum.EnumValues[1].GetAsInteger(), 2);
         }
 
+        //"\"schema\": {        \"@type\": \"Object\",        \"fields\": [          {            \"name\": \"httpStreamTelemetry\",            \"displayName\": {              \"en\": \"HTTP Stream Telemetry\"            },            \"description\": {              \"en\": \"Enable or disable the HTTP telemetry stream to cloud.\"            },            \"schema\": {              \"@type\": \"Enum\",              \"valueSchema\": \"string\",              \"enumValues\": [                {                  \"name\": \"enabled\",                  \"enumValue\": \"enabled\",                  \"displayName\": {                    \"en\": \"Enabled\"                  }                },                {                  \"name\": \"disabled\",                  \"enumValue\": \"disabled\",                  \"displayName\": {                    \"en\": \"Disabled\"                  }                }              ]            }          }        ]      }"
+        [TestMethod]
+        public void Schema_Complex_Object_Disoredered_Test()
+        {
+            string json = "{    \"schema\": {        \"@type\": \"Object\",        \"fields\": [          {            \"name\": \"httpStreamTelemetry\",            \"displayName\": {              \"en\": \"HTTP Stream Telemetry\"            },            \"description\": {              \"en\": \"Enable or disable the HTTP telemetry stream to cloud.\"            },            \"schema\": {              \"@type\": \"Enum\",              \"valueSchema\": \"string\",              \"enumValues\": [                {                  \"name\": \"enabled\",                  \"enumValue\": \"enabled\",                  \"displayName\": {                    \"en\": \"Enabled\"                  }                },                {                  \"name\": \"disabled\",                  \"enumValue\": \"disabled\",                  \"displayName\": {                    \"en\": \"Disabled\"                  }                }              ]            }          }        ]      }}";
+
+            var deserialized = JsonSerializer.Deserialize<TestSchemaProperty>(json, DtdlConverter.Options);
+
+            Assert.IsNotNull(deserialized);
+            Assert.IsNull(deserialized.Schema.Primitive);
+            Assert.IsNotNull(deserialized.Schema.Complex);
+            Assert.IsTrue(deserialized.Schema.IsComplex);
+            Assert.IsFalse(deserialized.Schema.IsPrimitive);
+            Assert.IsFalse(deserialized.Schema.IsGeoSpatial);
+            Assert.IsNotNull(deserialized.Schema.Complex?.Object);
+        }
+
+
         [TestMethod]
         [ExpectedException(typeof(JsonException))]
         public void Schema_Complex_Enum_WrongType_Test()

@@ -17,30 +17,52 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         public string? Comment { get; set; }
 
         [JsonPropertyName("description")]
-        public string? Description { get; set; }
+        [JsonConverter(typeof(LocalizableStringConverter))]
+        public Dictionary<string, string>? LocalizableDescription { get; set; }
+
+        [JsonIgnore]
+        public string? Description => GetLocalizedDescription();
+
+        [JsonIgnore]
+        public string? DisplayName => GetLocalizedDisplayName();
+
 
         [JsonPropertyName("displayName")]
-        public string? DisplayName { get; set; }
+        [JsonConverter(typeof(LocalizableStringConverter))]
+        public Dictionary<string, string>? LocalizableDisplayName { get; set; }
+
+        public string? GetLocalizedDescription(string languageCode = "default")
+        {
+            if (LocalizableDescription != null)
+            {
+                return LocalizableDescription[languageCode];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public string? GetLocalizedDisplayName(string languageCode = "default")
+        {
+            if (LocalizableDisplayName != null)
+            {
+                return LocalizableDisplayName[languageCode];
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 
-    public class Field
+    //TODO: review sacar base para name, id, comment, ds
+
+    public class Field : DtdlBase
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
 
         [JsonPropertyName("schema")]
         public Schema Schema { get; set; }
 
-        [JsonPropertyName("@id")]
-        public string Id { get; set; }
-
-        [JsonPropertyName("comment")]
-        public string? Comment { get; set; }
-
-        [JsonPropertyName("description")]
-        public string? Description { get; set; }
-
-        [JsonPropertyName("displayName")]
-        public string? DisplayName { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.Eventing.Reader;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Iot.PnpDashboard.Devices.Dtdl
@@ -23,39 +24,59 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         public EnumValueSchema ValueSchema { get; set; }
 
         [JsonPropertyName("@id")]
-        public string? Id { get; set; }
+        public string Id { get; set; }
 
         [JsonPropertyName("comment")]
         public string? Comment { get; set; }
 
         [JsonPropertyName("description")]
-        public string? Description { get; set; }
+        [JsonConverter(typeof(LocalizableStringConverter))]
+        public Dictionary<string, string>? LocalizableDescription { get; set; }
+
+        [JsonIgnore]
+        public string? Description => GetLocalizedDescription();
+
+        [JsonIgnore]
+        public string? DisplayName => GetLocalizedDisplayName();
+
 
         [JsonPropertyName("displayName")]
-        public string? DisplayName { get; set; }
+        [JsonConverter(typeof(LocalizableStringConverter))]
+        public Dictionary<string, string>? LocalizableDisplayName { get; set; }
+
+        public string? GetLocalizedDescription(string languageCode = "default")
+        {
+            if (LocalizableDescription != null)
+            {
+                return LocalizableDescription[languageCode];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public string? GetLocalizedDisplayName(string languageCode = "default")
+        {
+            if (LocalizableDisplayName != null)
+            {
+                return LocalizableDisplayName[languageCode];
+            }
+            else
+            {
+                return null;
+            }
+        }
 
     }
 
-    public struct EnumValue
+    public class EnumValue : DtdlBase
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-
         [JsonPropertyName("enumValue")]
         public JsonElement Value { get; set; }
 
-        [JsonPropertyName("@id")]
-        public string? Id { get; set; }
-
-        [JsonPropertyName("comment")]
-        public string? Comment { get; set; }
-
-        [JsonPropertyName("description")]
-        public string? Description { get; set; }
-
-        [JsonPropertyName("displayName")]
-        public string? DisplayName { get; set; }
-
+        public bool IsString => Value.ValueKind == JsonValueKind.String;
+        public bool IsInteger => Value.ValueKind == JsonValueKind.Number;
 
         public string? GetAsString()
         {
