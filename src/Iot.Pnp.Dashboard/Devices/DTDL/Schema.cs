@@ -22,6 +22,10 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         public bool IsComplex => Complex != null;
         public bool IsGeoSpatial => GeoSpatial != null;
         public bool IsReferenceId => ReferenceId != null;
+
+        public Schema()
+        {
+        }
     }
 
     internal class SchemaConverter : JsonConverter<Schema>

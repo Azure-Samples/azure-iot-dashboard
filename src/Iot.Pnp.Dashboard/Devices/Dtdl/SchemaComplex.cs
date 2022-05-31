@@ -26,6 +26,9 @@ namespace Iot.PnpDashboard.Devices.Dtdl
         public bool IsEnum => Enum != null;
         public bool IsMap => Map != null;
         public bool IsObject => Object != null;
+        public SchemaComplex()
+        {
+        }
     }
 
     internal class SchemaComplexConverter : JsonConverter<SchemaComplex>
