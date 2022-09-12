@@ -38,4 +38,4 @@ Configurations:
 * Message Routes to Built-in endpoint for:
 ![image](https://user-images.githubusercontent.com/2638875/153589025-2acae73e-bfc5-49d8-bd9b-0599ba7dc7fa.png)
 * Consumer group `webapp`
-* Any device sending telemetry to IoT Hub, preferable if it is PnP and use Digital Twin
+* Any device sending telemetry to IoT Hub, preferable if it is PnP and use Digital Twins
