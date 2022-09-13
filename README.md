@@ -1,4 +1,4 @@
-# IoT Dashboard using PnP & Digital Twins
+# IoT Dashboard using PnP & Digital Twin Definition Language
 
 End-to-end sample to showcase usage of Azure IoT SDK for .NET, best practices for telemetry consumption, resilency, device interaction using IoT Plug & Play capabilities and Digital Twin Definition Language (DTDL).
 
