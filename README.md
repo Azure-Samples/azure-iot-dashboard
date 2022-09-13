@@ -1,6 +1,6 @@
 # IoT Dashboard
 
-End-to-end sample to showcase usage of Azure IoT SDK for .NET, best practices for telemetry consumption, resilency, device interaction using PnP capabilities and Digital Twin, etc.
+End-to-end sample to showcase usage of Azure IoT SDK for .NET, best practices for telemetry consumption, resilency, device interaction using PnP capabilities and Digital Twins, etc.
 
 ## Features
 
@@ -12,7 +12,7 @@ Starting:
 * Failover resilency
 * Device Registry Interaction?
 * Realtime-device Discovery?
-* Device Twin Interaction (based on PnP capabilities)
+* Device Twins Interaction (based on PnP capabilities)
 * ...
 
 ## Getting Started
